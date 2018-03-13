@@ -1,7 +1,8 @@
 CC=gcc
 CFLAGS = -Wall -pedantic
 
-src_files = $(wildcard src/*.c) $(wildcard src/actions/*.c)
+src_files = $(wildcard src/*.c) $(wildcard src/actions/*.c) \
+	    $(wildcard src/http/*.c)
 src_objects = $(src_files:%.c=%.o)
 
 name = mtg-client
