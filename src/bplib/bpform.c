@@ -7,17 +7,22 @@
 #include "bpwindow.h"
 #include "bpform.h"
 
-#define INPUT_INDEX(i) i * 2
-#define LABEL_INDEX(i) (i * 2) + 1
+/*
+ * This file contains code copied from/based on:
+ *   For +trim_whitespaces+, and form driver:
+ *     https://gist.github.com/alan-mushi/c8a6f34d1df18574f643
+ */
 
   static char*
 trim_whitespaces(char *str);
 
-  static int
-form_loop(FORM *form, WINDOW *body_win, int field_count)
+  extern int
+bp_form_loop(BpForm *form)
 {
   int ch, loop = 1;
 
+  // FIXME: Should this be handled by the caller?
+  wrefresh(form->_body_win);
   keypad(stdscr, TRUE);
   noecho();
 
@@ -28,12 +33,12 @@ form_loop(FORM *form, WINDOW *body_win, int field_count)
 
     switch (ch) {
       case 10:
-        current = field_index(current_field(form));
+        current = field_index(current_field(form->_form));
 
-        form_driver(form, REQ_NEXT_FIELD);
-        form_driver(form, REQ_END_LINE);
+        form_driver(form->_form, REQ_NEXT_FIELD);
+        form_driver(form->_form, REQ_END_LINE);
 
-        if (field_index(current_field(form)) < current)
+        if (field_index(current_field(form->_form)) < current)
           return BP_FORM_OK;
         break;
       case 27:
@@ -45,45 +50,45 @@ form_loop(FORM *form, WINDOW *body_win, int field_count)
         break;
 
       case KEY_DOWN:
-        form_driver(form, REQ_NEXT_FIELD);
-        form_driver(form, REQ_END_LINE);
+        form_driver(form->_form, REQ_NEXT_FIELD);
+        form_driver(form->_form, REQ_END_LINE);
         break;
 
       case KEY_UP:
-        form_driver(form, REQ_PREV_FIELD);
-        form_driver(form, REQ_END_LINE);
+        form_driver(form->_form, REQ_PREV_FIELD);
+        form_driver(form->_form, REQ_END_LINE);
         break;
 
       case KEY_LEFT:
-        form_driver(form, REQ_PREV_CHAR);
+        form_driver(form->_form, REQ_PREV_CHAR);
         break;
 
       case KEY_RIGHT:
-        form_driver(form, REQ_NEXT_CHAR);
+        form_driver(form->_form, REQ_NEXT_CHAR);
         break;
 
         // Delete the char before cursor
       case KEY_BACKSPACE:
       case 127:
-        form_driver(form, REQ_DEL_PREV);
+        form_driver(form->_form, REQ_DEL_PREV);
         break;
 
         // Delete the char under the cursor
       case KEY_DC:
-        form_driver(form, REQ_DEL_CHAR);
+        form_driver(form->_form, REQ_DEL_CHAR);
         break;
 
       default:
-        form_driver(form, ch);
+        form_driver(form->_form, ch);
         break;
     }
 
-    wrefresh(body_win);
+    wrefresh(form->_body_win);
   } while (loop == 1);
 }
 
-  static void
-form_field_set_value(BpFormField *field, char *value)
+  extern void
+bp_form_field_set_value(BpFormField *field, char *value)
 {
   if (field->value != NULL)
     free(field->value);
@@ -91,20 +96,22 @@ form_field_set_value(BpFormField *field, char *value)
   field->value = strdup(value);
 }
 
-  extern int
-bp_show_form(char *title, BpFormField **form_fields, int field_count,
-             int sizex, int sizey, int x, int y)
+  static void
+bp_form_create_fields(BpForm *form,
+                      BpFormField **form_fields,
+                      int field_count)
 {
-  FIELD **fields, **field;
+  FIELD **field;
   BpFormField **form_field;
 
-  fields = (FIELD **)calloc(field_count + 1, sizeof(FIELD *));
-  field = fields;
-  form_field = form_fields;
+  form->_fields = (FIELD **)calloc(field_count + 1, sizeof(FIELD *));
+
+  field = form->_fields;
+  form->_form_fields = form_field = form_fields;
 
   for (int i = 0; i < field_count; i++)
   {
-    *field = new_field(1, sizex - 8, i, 1, 0, 0);
+    *field = new_field(1, form->sizex - 8, i, 1, 0, 0);
     set_field_buffer(*field, 0, (*form_field)->value);
     set_field_opts(*field, O_VISIBLE);
 
@@ -122,42 +129,113 @@ bp_show_form(char *title, BpFormField **form_fields, int field_count,
     form_field++;
     field++;
   }
+}
 
-  FORM *form = new_form(fields);
+  static void
+bp_form_destroy_fields(BpForm *form)
+{
+  FIELD **field = form->_fields;
 
-  BpWindow *main_win = bp_window_create_frame(title, sizex, sizey, x, y);
-
-  WINDOW *body_win = derwin(main_win, sizey - 4, sizex - 2, 3, 1);
-
-  set_form_win(form, body_win);
-  set_form_sub(form, derwin(body_win, sizey - 6, sizex - 4, 1, 1));
-  post_form(form);
-
-  refresh();
-  wrefresh(main_win);
-  wrefresh(body_win);
-
-  int result = form_loop(form, body_win, field_count);
-
-  unpost_form(form);
-  free_form(form);
-  delwin(body_win);
-  bp_window_destroy_clear(main_win);
-
-  field = fields;
-  form_field = form_fields;
-
-  while(*field)
+  while (*field)
   {
-    if (result == BP_FORM_OK)
-      form_field_set_value(*form_field,
-        trim_whitespaces(field_buffer(*field, 0)));
     free_field(*field);
-    form_field++;
     field++;
   }
 
-  free(fields);
+  free(form->_fields);
+}
+
+  static void
+display_form(BpForm *form)
+{
+  form->_form = new_form(form->_fields);
+
+  set_form_win(form->_form, form->_body_win);
+  set_form_sub(form->_form,
+               derwin(form->_body_win,
+                      form->sizey - 6, form->sizex - 4, 1, 1));
+
+  post_form(form->_form);
+
+  refresh();
+  wrefresh(form->_main_win);
+  wrefresh(form->_body_win);
+}
+
+  extern BpForm *
+bp_form_create(char *title, BpFormField **form_fields, int field_count,
+              int sizex, int sizey, int x, int y)
+{
+  BpForm *form = (BpForm *)malloc(sizeof(BpForm));
+
+  form->sizex = sizex;
+  form->sizey = sizey;
+  form->x = x;
+  form->y = y;
+
+  form->_main_win = bp_window_create_frame(title, sizex, sizey, x, y);
+  form->_body_win = derwin(form->_main_win, sizey - 4, sizex - 2, 3, 1);
+
+  bp_form_create_fields(form, form_fields, field_count);
+
+  display_form(form);
+
+  return form;
+}
+
+  extern void
+bp_form_sync_input(BpForm *form)
+{
+  FIELD **field = form->_fields;
+  BpFormField **form_field = form->_form_fields;
+
+  while(*field)
+  {
+    bp_form_field_set_value(*form_field,
+      trim_whitespaces(field_buffer(*field, 0)));
+    form_field++;
+    field++;
+  }
+}
+
+  extern void
+bp_form_update_fields(BpForm *form, BpFormField **fields, int field_count)
+{
+  unpost_form(form->_form);
+  free_form(form->_form);
+  bp_form_destroy_fields(form);
+
+  bp_form_create_fields(form, fields, field_count);
+
+  display_form(form);
+}
+
+  extern void
+bp_form_destroy(BpForm *form)
+{
+  unpost_form(form->_form);
+  free_form(form->_form);
+  delwin(form->_body_win);
+  bp_window_destroy_clear(form->_main_win);
+
+  bp_form_destroy_fields(form);
+
+  free(form);
+}
+
+  extern int
+bp_show_form(char *title, BpFormField **form_fields, int field_count,
+             int sizex, int sizey, int x, int y)
+{
+  BpForm *form = bp_form_create(title, form_fields, field_count,
+                                sizex, sizey, x, y);
+
+  int result = bp_form_loop(form);
+
+  if (result == BP_FORM_OK)
+    bp_form_sync_input(form);
+
+  bp_form_destroy(form);
 
   return result;
 }
@@ -169,7 +247,7 @@ bp_form_field_create(enum BpFormFieldType type, char *value)
 
   field->type = type;
   field->value = NULL;
-  form_field_set_value(field, value);
+  bp_form_field_set_value(field, value);
 
   return field;
 }
@@ -183,26 +261,24 @@ bp_form_field_destroy(BpFormField *field)
 
 /*
  * This is useful because ncurses fill fields blanks with spaces.
+ *
  */
   static char*
 trim_whitespaces(char *str)
 {
   char *end;
 
-  // trim leading space
   while (isspace(*str))
     str++;
 
-  if (*str == 0) // all spaces?
+  if (*str == 0)
     return str;
 
-  // trim trailing space
   end = str + strnlen(str, 128) - 1;
 
   while (end > str && isspace(*end))
     end--;
 
-  // write new null terminator
   *(end + 1) = '\0';
 
   return str;

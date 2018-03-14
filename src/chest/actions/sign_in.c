@@ -14,6 +14,7 @@
 sign_in_form(Session *session)
 {
   BpFormField **fields;
+  int result;
 
   fields = (BpFormField **)calloc(4, sizeof(BpFormField *));
   fields[0] = bp_form_field_create(BP_FORM_FIELD_TYPE_LABEL, "Name");
@@ -21,21 +22,30 @@ sign_in_form(Session *session)
   fields[2] = bp_form_field_create(BP_FORM_FIELD_TYPE_LABEL, "Password");
   fields[3] = bp_form_field_create(BP_FORM_FIELD_TYPE_PASSWORD, "");
 
-  int result = bp_show_form("Sign in", fields, 4, 40, 10, 10, 10);
+  BpForm *form = bp_form_create("Sign in", fields, 4, 40, 10, 10, 10);
 
-  if (result == BP_FORM_OK)
+  do
   {
-    result = sign_in(session, fields[1]->value, fields[3]->value);
+    result = bp_form_loop(form);
 
-    if (result == 0)
-      result = BP_FORM_OK;
-    else
+    if (result == BP_FORM_OK)
     {
-      bp_show_message("Login failed.", 14, 13);
+      bp_form_sync_input(form);
 
-      result = BP_FORM_ERR;
+      if (sign_in(session, fields[1]->value, fields[3]->value) == 0)
+        result = BP_FORM_OK;
+      else
+      {
+        bp_show_message("Login failed.", 14, 13);
+        bp_form_field_set_value(fields[3], "");
+        bp_form_update_fields(form, fields, 4);
+
+        result = BP_FORM_ERR;
+      }
     }
-  }
+  } while ((result != BP_FORM_OK) && (result != BP_FORM_CANCEL));
+
+  bp_form_destroy(form);
 
   for (int i = 0; i < 4; i++)
     bp_form_field_destroy(fields[i]);

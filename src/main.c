@@ -10,7 +10,6 @@
 main_menu(Session *session)
 {
   int selected;
-  int result;
 
   char *choices[] = {
     "Sign In",
@@ -24,9 +23,7 @@ main_menu(Session *session)
   switch (selected)
   {
     case 0:
-      do {
-        result = sign_in_form(session);
-      } while (result != BP_FORM_OK && result != BP_FORM_CANCEL);
+      sign_in_form(session);
     break;
     case 1:
       collection_menu(session);
