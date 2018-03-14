@@ -33,13 +33,13 @@ form_loop(FORM *form, WINDOW *body_win, int field_count)
         form_driver(form, REQ_END_LINE);
 
         if (field_index(current_field(form)) < current)
-          return 1;
+          return FORM_OK;
         break;
       case 27:
         // Alt+x Closes the window
         ch = getch();
         if (ch == 'x')
-          return 0;
+          return FORM_CANCEL;
 
         break;
 
@@ -79,21 +79,15 @@ form_loop(FORM *form, WINDOW *body_win, int field_count)
 
     wrefresh(body_win);
   } while (loop == 1);
-
-  return 0;
 }
 
   static void
 form_field_set_value(FormField *field, char *value)
 {
-  int len = strlen(value);
-
   if (field->value != NULL)
     free(field->value);
 
-  field->value = (char*)malloc(len + 1);
-  memcpy(field->value, value, len);
-  field->value[len] = '\0';
+  field->value = strdup(value);
 }
 
   static void
@@ -167,7 +161,7 @@ show_form(char *title, FormField **form_fields, int field_count, int sizex, int 
 
   while(*field)
   {
-    if (result)
+    if (result == FORM_OK)
       form_field_set_value(*form_field,
         trim_whitespaces(field_buffer(*field, 0)));
     free_field(*field);

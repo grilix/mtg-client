@@ -3,8 +3,9 @@
 
 struct _Response
 {
+  char **headers;
   char *body;
-  int body_max;
+  int max_size;
   int body_len;
 };
 

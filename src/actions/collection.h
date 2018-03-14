@@ -2,6 +2,6 @@
 #define ACTIONS_COLLECTION_H
 
   extern void
-collection_menu(void);
+collection_menu(Session *session);
 
 #endif

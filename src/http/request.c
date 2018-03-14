@@ -6,10 +6,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "../bplib/bpstring.h"
 #include "response.h"
 #include "request.h"
-
-#define DEBUG 1
 
 void
 error(const char *msg)
@@ -65,16 +64,13 @@ build_request_body(char *body, int max_len,
     "Host: %s\r\n" \
     "%s" \
     "Content-Length: %d\r\n" \
-    "Connection: close\r\n" \
+    "Connection: Close\r\n" \
     "\r\n" \
     "%s";
 
   int message_len;
 
-  // FIXME: sizeof(request->headers) * something?
-  char *headers = (char *)malloc(1024 + 1);
-  int header_len = 0;
-  char **header = request->headers;
+  char *custom_headers = bpjoin_str(request->headers, "\r\n", 1);
   char *method_str;
 
   switch (method)
@@ -90,30 +86,13 @@ build_request_body(char *body, int max_len,
       break;
   }
 
-  while (*header && (header_len < 1024))
-  {
-    strncat(headers, *header, 1024 - header_len);
-    header_len += strlen(*header);
-
-    strncat(headers, "\r\n", 1024 - header_len);
-    header_len += 2;
-    header++;
-  }
-
-  // TODO: does this include null char?
-  if (header_len == 1024)
-  {
-    free(headers);
-    return -1;
-  }
-
   message_len = snprintf(
       body, max_len, message_fmt,
-      method_str, request->url.path, request->url.host, headers,
+      method_str, request->url.path, request->url.host, custom_headers,
       request->body_len,
       (request->body == NULL) ? "" : request->body);
 
-  free(headers);
+  free(custom_headers);
   return message_len;
 }
 
@@ -152,21 +131,13 @@ send_request(Request *request, RequestMethod method, Response *response)
   int message_len;
   char message[1024];
 
-  sockfd = open_connection(request->url);
-
   message_len = build_request_body(message, 1024, request, method);
 
-#if DEBUG
-  printf("Request:\n%s\n", message);
-#endif
+  sockfd = open_connection(request->url);
 
   write_request(sockfd, message, message_len);
 
   response_read(sockfd, response);
-
-#if DEBUG
-  printf("Response:\n%s\n", response->body);
-#endif
 }
 
   extern void

@@ -1,10 +1,11 @@
 #include <ncurses.h>
 #include "menu.h"
+#include "session.h"
 #include "actions/sign_in.h"
 #include "actions/collection.h"
 
   int
-main_menu()
+main_menu(Session *session)
 {
   int selected;
 
@@ -20,10 +21,10 @@ main_menu()
   switch (selected)
   {
     case 0:
-      sign_in_start();
+      sign_in_form(session);
     break;
     case 1:
-      collection_menu();
+      collection_menu(session);
     break;
     case 2:
       return -1;
@@ -43,11 +44,13 @@ main()
 
   init_pair(1, COLOR_RED, COLOR_BLACK);
   init_pair(2, COLOR_CYAN, COLOR_BLACK);
+  Session *session = session_allocate();
 
   do {
-    selected = main_menu();
+    selected = main_menu(session);
   } while (selected != -1);
 
+  session_destroy(session);
   endwin();
 
   return 0;

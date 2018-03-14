@@ -1,6 +1,10 @@
 #ifndef SRC_FORM_H
 #define SRC_FORM_H
 
+#define FORM_OK 1
+#define FORM_CANCEL 2
+#define FORM_ERR 3
+
 enum FormFieldType
 {
   FORM_FIELD_TYPE_INPUT,

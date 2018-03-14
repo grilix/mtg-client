@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 
+#include "../session.h"
 #include "../form.h"
 #include "sign_in.h"
 
@@ -9,10 +10,10 @@
 #include "../http/request.h"
 
   static int
-sign_in(char *user, char *password);
+sign_in(Session *session, char *user, char *password);
 
-  extern void
-sign_in_start()
+  extern int
+sign_in_form(Session *session)
 {
   FormField **fields;
 
@@ -24,29 +25,39 @@ sign_in_start()
 
   int result = show_form("Sign in", fields, 4, 40, 10, 10, 10);
 
-  if (result)
+  if (result == FORM_OK)
   {
-    def_prog_mode();
-    endwin();
+    result = sign_in(session, fields[1]->value, fields[3]->value);
 
-    sign_in(fields[1]->value, fields[3]->value);
-    getch();
+    if (result == FORM_ERR)
+    {
+      def_prog_mode();
+      endwin();
 
-    reset_prog_mode();
-    refresh();
+      printf("Login failed.\n");
+      getch();
+
+      reset_prog_mode();
+      refresh();
+    }
   }
 
   for (int i = 0; i < 4; i++)
     form_field_destroy(fields[i]);
 
   free(fields);
+
+  return result;
 }
 
   static int
-sign_in(char *user, char *password)
+sign_in(Session *session, char *user, char *password)
 {
+  int result;
+
   char data[1024], len;
   Url url = {.host = "localhost", .port = 3000, .path = "/api/v1/auth"};
+
   char *headers[] = {
     "Accept: application/json",
     "Content-Type: application/json",
@@ -63,8 +74,13 @@ sign_in(char *user, char *password)
 
   send_post(request, response);
 
+  result = session_extract_token(session, response->headers);
+
   request_destroy(request);
   response_destroy(response);
 
-  return 1;
+  if (result == 0)
+    return FORM_OK;
+
+  return FORM_ERR;
 }
