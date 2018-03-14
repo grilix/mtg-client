@@ -1,8 +1,17 @@
 #ifndef BPLIB_BPFORM_H
 #define BPLIB_BPFORM_H
 
+/*
+ * The user sent the form and the operation was successful.
+ */
 #define BP_FORM_OK 1
+/*
+ * The user cancelled the form.
+ */
 #define BP_FORM_CANCEL 2
+/*
+ * The user sent the form but the operation failed.
+ */
 #define BP_FORM_ERR 3
 
 enum BpFormFieldType

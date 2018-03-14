@@ -4,6 +4,7 @@
 #include <ncurses.h>
 #include <form.h>
 
+#include "bpwindow.h"
 #include "bpform.h"
 
 #define INPUT_INDEX(i) i * 2
@@ -90,19 +91,6 @@ form_field_set_value(BpFormField *field, char *value)
   field->value = strdup(value);
 }
 
-  static void
-draw_form_frame(char *title, WINDOW *w, int sizex)
-{
-  box(w, 0, 0);
-  wattron(w, COLOR_PAIR(1));
-  mvwprintw(w, 1, 1, "%s", title);
-  wattroff(w, COLOR_PAIR(1));
-
-  mvwaddch(w, 2, 0, ACS_LTEE);
-  mvwhline(w, 2, 1, ACS_HLINE, sizex - 2);
-  mvwaddch(w, 2, sizex - 1, ACS_RTEE);
-}
-
   extern int
 bp_show_form(char *title, BpFormField **form_fields, int field_count,
              int sizex, int sizey, int x, int y)
@@ -137,10 +125,9 @@ bp_show_form(char *title, BpFormField **form_fields, int field_count,
 
   FORM *form = new_form(fields);
 
-  WINDOW *main_win = newwin(sizey, sizex, x, y);
-  WINDOW *body_win = derwin(main_win, sizey - 4, sizex - 2, 3, 1);
+  BpWindow *main_win = bp_window_create_frame(title, sizex, sizey, x, y);
 
-  draw_form_frame(title, main_win, sizex);
+  WINDOW *body_win = derwin(main_win, sizey - 4, sizex - 2, 3, 1);
 
   set_form_win(form, body_win);
   set_form_sub(form, derwin(body_win, sizey - 6, sizex - 4, 1, 1));
@@ -155,7 +142,7 @@ bp_show_form(char *title, BpFormField **form_fields, int field_count,
   unpost_form(form);
   free_form(form);
   delwin(body_win);
-  delwin(main_win);
+  bp_window_destroy_clear(main_win);
 
   field = fields;
   form_field = form_fields;

@@ -3,6 +3,7 @@
 #include <ncurses.h>
 
 #include "../../bplib/bpform.h"
+#include "../../bplib/bpmessage.h"
 #include "../../bplib/bpresponse.h"
 #include "../../bplib/bprequest.h"
 
@@ -26,16 +27,13 @@ sign_in_form(Session *session)
   {
     result = sign_in(session, fields[1]->value, fields[3]->value);
 
-    if (result != 0)
+    if (result == 0)
+      result = BP_FORM_OK;
+    else
     {
-      def_prog_mode();
-      endwin();
+      bp_show_message("Login failed.", 14, 13);
 
-      printf("Login failed.\n");
-      getch();
-
-      reset_prog_mode();
-      refresh();
+      result = BP_FORM_ERR;
     }
   }
 

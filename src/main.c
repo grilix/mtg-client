@@ -1,5 +1,7 @@
 #include <ncurses.h>
+#include "bplib/bpform.h"
 #include "bplib/bpmenu.h"
+#include "bplib/bpmessage.h"
 #include "chest/session.h"
 #include "chest/actions/sign_in.h"
 #include "chest/actions/collection.h"
@@ -8,6 +10,7 @@
 main_menu(Session *session)
 {
   int selected;
+  int result;
 
   char *choices[] = {
     "Sign In",
@@ -21,7 +24,9 @@ main_menu(Session *session)
   switch (selected)
   {
     case 0:
-      sign_in_form(session);
+      do {
+        result = sign_in_form(session);
+      } while (result != BP_FORM_OK && result != BP_FORM_CANCEL);
     break;
     case 1:
       collection_menu(session);

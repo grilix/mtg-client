@@ -4,7 +4,8 @@
 #include <menu.h>
 #include <string.h>
 
-#include "menu.h"
+#include "bpwindow.h"
+#include "bpmenu.h"
 
   static int
 menu_loop(WINDOW *w, MENU *menu)
@@ -43,24 +44,11 @@ menu_loop(WINDOW *w, MENU *menu)
   return item_index(current_item(menu));
 }
 
-  static void
-draw_menu_frame(char *title, WINDOW *w, int sizex)
-{
-  box(w, 0, 0);
-  wattron(w, COLOR_PAIR(1));
-  mvwprintw(w, 1, 1, "%s", title);
-  wattroff(w, COLOR_PAIR(1));
-
-  mvwaddch(w, 2, 0, ACS_LTEE);
-  mvwhline(w, 2, 1, ACS_HLINE, sizex - 2);
-  mvwaddch(w, 2, sizex - 1, ACS_RTEE);
-}
-
   extern int
 bp_show_menu(char *title, char **options, int options_count,
              int sizex, int sizey, int x, int y)
 {
-  WINDOW *w;
+  BpWindow *window;
   MENU *menu;
   ITEM **items, **item;
   int selected;
@@ -73,22 +61,20 @@ bp_show_menu(char *title, char **options, int options_count,
 
   menu = new_menu(items);
 
-  w = newwin(sizey, sizex, y, x);
+  window = bp_window_create_frame(title, sizex, sizey, x, y);
 
-  draw_menu_frame(title, w, sizex);
-
-  set_menu_win(menu, w);
-  set_menu_sub(menu, derwin(w, sizey - 4, sizex - 1, 3, 1));
+  set_menu_win(menu, window);
+  set_menu_sub(menu, derwin(window, sizey - 4, sizex - 1, 3, 1));
   set_menu_format(menu, sizey - 4, 1);
 
   post_menu(menu);
-  wrefresh(w);
+  wrefresh(window);
 
-  selected = menu_loop(w, menu);
+  selected = menu_loop(window, menu);
 
   unpost_menu(menu);
   free_menu(menu);
-  delwin(w);
+  bp_window_destroy_clear(window);
   item = items;
 
   while (*item)
