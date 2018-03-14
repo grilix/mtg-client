@@ -4,8 +4,8 @@
 #include "../session.h"
 #include "collection.h"
 
-#include "../http/response.h"
-#include "../http/request.h"
+#include "../../bplib/bpresponse.h"
+#include "../../bplib/bprequest.h"
 
   static int
 get_collection(Session *session);
@@ -27,25 +27,27 @@ collection_menu(Session *session)
   static int
 get_collection(Session *session)
 {
-  Url url = {.host = "localhost", .port = 3000, .path = "/api/v1/collection"};
+  BpUrl url = {
+    .host = "localhost", .port = 3000, .path = "/api/v1/collection"
+  };
 
   char **headers = calloc(4, sizeof(char *));
   headers[0] = "Accept: application/json";
   headers[1] = "Content-Type: application/json";
   headers[2] = session_create_header(session);
 
-  Response *response = response_allocate(1024 * 100);
-  Request *request = request_allocate(url, headers);
+  BpResponse *response = bp_response_allocate(1024 * 100);
+  BpRequest *request = bp_request_allocate(url, headers);
 
-  send_get(request, response);
+  bp_send_get(request, response);
   printf("RESULT: %s\n", *response->headers);
 
   if (headers[2] != NULL)
     free(headers[2]);
 
   free(headers);
-  request_destroy(request);
-  response_destroy(response);
+  bp_request_destroy(request);
+  bp_response_destroy(response);
 
   return 1;
 }

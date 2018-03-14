@@ -1,8 +1,8 @@
 #include <ncurses.h>
-#include "menu.h"
-#include "session.h"
-#include "actions/sign_in.h"
-#include "actions/collection.h"
+#include "bplib/bpmenu.h"
+#include "chest/session.h"
+#include "chest/actions/sign_in.h"
+#include "chest/actions/collection.h"
 
   int
 main_menu(Session *session)
@@ -16,7 +16,7 @@ main_menu(Session *session)
     "Help",
   };
 
-  selected = show_menu("Options", choices, 3, 20, 10, 15, 15);
+  selected = bp_show_menu("Options", choices, 3, 20, 10, 15, 15);
 
   switch (selected)
   {

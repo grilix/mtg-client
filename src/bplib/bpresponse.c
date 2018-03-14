@@ -3,22 +3,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "../bplib/bpstring.h"
-#include "response.h"
+#include "bpstring.h"
+#include "bpresponse.h"
 
-  extern Response *
-response_allocate(int max_data)
+  extern BpResponse *
+bp_response_allocate(int max_data)
 {
-  Response *response = (Response *)malloc(sizeof(Response));
+  BpResponse *response = (BpResponse *)malloc(sizeof(BpResponse));
+
   response->headers = NULL;
   response->body = NULL;
   response->max_size = max_data;
   response->body_len = 0;
+
   return response;
 }
 
   static void
-response_destroy_headers(Response *response)
+bp_response_destroy_headers(BpResponse *response)
 {
   if (response->headers == NULL)
     return;
@@ -31,9 +33,9 @@ response_destroy_headers(Response *response)
 }
 
   static void
-response_reset(Response *response)
+bp_response_reset(BpResponse *response)
 {
-  response_destroy_headers(response);
+  bp_response_destroy_headers(response);
 
   if (response->body != NULL)
   {
@@ -43,18 +45,18 @@ response_reset(Response *response)
 }
 
   extern void
-response_destroy(Response *response)
+bp_response_destroy(BpResponse *response)
 {
-  response_reset(response);
+  bp_response_reset(response);
   free(response);
 }
 
   static void
-response_populate(Response *response, char *data)
+response_populate(BpResponse *response, char *data)
 {
-  char **parts = bpsplit_str(data, "\r\n\r\n", 2);
+  char **parts = bp_split_str(data, "\r\n\r\n", 2);
 
-  response->headers = bpsplit_str(parts[0], "\r\n", 0);
+  response->headers = bp_split_str(parts[0], "\r\n", 0);
   free(parts[0]);
 
   /*
@@ -66,12 +68,12 @@ response_populate(Response *response, char *data)
 }
 
   extern void
-response_read(int sockfd, Response *response)
+bp_response_read(int sockfd, BpResponse *response)
 {
   int received, bytes;
   char *data;
 
-  response_reset(response);
+  bp_response_reset(response);
 
   data = calloc(response->max_size + 1, sizeof(char));
 

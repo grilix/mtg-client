@@ -6,9 +6,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#include "../bplib/bpstring.h"
-#include "response.h"
-#include "request.h"
+#include "bpstring.h"
+#include "bpresponse.h"
+#include "bprequest.h"
 
 void
 error(const char *msg)
@@ -17,19 +17,21 @@ error(const char *msg)
   exit(-2);
 }
 
-  extern Request *
-request_allocate(Url url, char **headers)
+  extern BpRequest *
+bp_request_allocate(BpUrl url, char **headers)
 {
-  Request *request = (Request *)malloc(sizeof(Request));
+  BpRequest *request = (BpRequest *)malloc(sizeof(BpRequest));
+
   request->url = url;
   request->body = NULL;
   request->body_len = 0;
   request->headers = headers;
+
   return request;
 }
 
   extern void
-request_destroy(Request *request)
+bp_request_destroy(BpRequest *request)
 {
   free(request);
 }
@@ -37,13 +39,10 @@ request_destroy(Request *request)
   static void
 write_request(int sockfd, const char *message, int total)
 {
-  int sent, bytes;
+  int sent = 0, bytes;
 
-  sent = 0;
   do {
-    bytes = write(sockfd,
-                  message + sent,
-                  total - sent);
+    bytes = write(sockfd, message + sent, total - sent);
 
     if (bytes < 0)
       error("ERROR writing message to socket");
@@ -57,7 +56,7 @@ write_request(int sockfd, const char *message, int total)
 
   static int
 build_request_body(char *body, int max_len,
-                   Request *request, RequestMethod method)
+                   BpRequest *request, BpRequestMethod method)
 {
   char *message_fmt =
     "%s %s HTTP/1.1\r\n" \
@@ -70,15 +69,15 @@ build_request_body(char *body, int max_len,
 
   int message_len;
 
-  char *custom_headers = bpjoin_str(request->headers, "\r\n", 1);
+  char *custom_headers = bp_join_str(request->headers, "\r\n", 1);
   char *method_str;
 
   switch (method)
   {
-    case REQUEST_METHOD_POST:
+    case BP_REQUEST_METHOD_POST:
       method_str = "POST";
       break;
-    case REQUEST_METHOD_GET:
+    case BP_REQUEST_METHOD_GET:
       method_str = "GET";
       break;
     default:
@@ -97,7 +96,7 @@ build_request_body(char *body, int max_len,
 }
 
   static int
-open_connection(Url url)
+open_connection(BpUrl url)
 {
   struct hostent *server;
   struct sockaddr_in serv_addr;
@@ -125,7 +124,8 @@ open_connection(Url url)
 }
 
   static void
-send_request(Request *request, RequestMethod method, Response *response)
+bp_send_request(BpRequest *request, BpRequestMethod method,
+                BpResponse *response)
 {
   int sockfd;
   int message_len;
@@ -137,17 +137,17 @@ send_request(Request *request, RequestMethod method, Response *response)
 
   write_request(sockfd, message, message_len);
 
-  response_read(sockfd, response);
+  bp_response_read(sockfd, response);
 }
 
   extern void
-send_get(Request *request, Response *response)
+bp_send_get(BpRequest *request, BpResponse *response)
 {
-  send_request(request, REQUEST_METHOD_GET, response);
+  bp_send_request(request, BP_REQUEST_METHOD_GET, response);
 }
 
   extern void
-send_post(Request *request, Response *response)
+bp_send_post(BpRequest *request, BpResponse *response)
 {
-  send_request(request, REQUEST_METHOD_POST, response);
+  bp_send_request(request, BP_REQUEST_METHOD_POST, response);
 }

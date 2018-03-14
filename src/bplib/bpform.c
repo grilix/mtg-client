@@ -4,7 +4,7 @@
 #include <ncurses.h>
 #include <form.h>
 
-#include "form.h"
+#include "bpform.h"
 
 #define INPUT_INDEX(i) i * 2
 #define LABEL_INDEX(i) (i * 2) + 1
@@ -33,13 +33,13 @@ form_loop(FORM *form, WINDOW *body_win, int field_count)
         form_driver(form, REQ_END_LINE);
 
         if (field_index(current_field(form)) < current)
-          return FORM_OK;
+          return BP_FORM_OK;
         break;
       case 27:
         // Alt+x Closes the window
         ch = getch();
         if (ch == 'x')
-          return FORM_CANCEL;
+          return BP_FORM_CANCEL;
 
         break;
 
@@ -82,7 +82,7 @@ form_loop(FORM *form, WINDOW *body_win, int field_count)
 }
 
   static void
-form_field_set_value(FormField *field, char *value)
+form_field_set_value(BpFormField *field, char *value)
 {
   if (field->value != NULL)
     free(field->value);
@@ -104,10 +104,11 @@ draw_form_frame(char *title, WINDOW *w, int sizex)
 }
 
   extern int
-show_form(char *title, FormField **form_fields, int field_count, int sizex, int sizey, int x, int y)
+bp_show_form(char *title, BpFormField **form_fields, int field_count,
+             int sizex, int sizey, int x, int y)
 {
   FIELD **fields, **field;
-  FormField **form_field;
+  BpFormField **form_field;
 
   fields = (FIELD **)calloc(field_count + 1, sizeof(FIELD *));
   field = fields;
@@ -119,7 +120,7 @@ show_form(char *title, FormField **form_fields, int field_count, int sizex, int 
     set_field_buffer(*field, 0, (*form_field)->value);
     set_field_opts(*field, O_VISIBLE);
 
-    if ((*form_field)->type == FORM_FIELD_TYPE_LABEL)
+    if ((*form_field)->type == BP_FORM_FIELD_TYPE_LABEL)
       field_opts_on(*field, O_AUTOSKIP);
     else
     {
@@ -127,7 +128,7 @@ show_form(char *title, FormField **form_fields, int field_count, int sizex, int 
       set_field_back(*field, A_UNDERLINE);
     }
 
-    if ((*form_field)->type != FORM_FIELD_TYPE_PASSWORD)
+    if ((*form_field)->type != BP_FORM_FIELD_TYPE_PASSWORD)
       field_opts_on(*field, O_PUBLIC);
 
     form_field++;
@@ -161,7 +162,7 @@ show_form(char *title, FormField **form_fields, int field_count, int sizex, int 
 
   while(*field)
   {
-    if (result == FORM_OK)
+    if (result == BP_FORM_OK)
       form_field_set_value(*form_field,
         trim_whitespaces(field_buffer(*field, 0)));
     free_field(*field);
@@ -174,18 +175,20 @@ show_form(char *title, FormField **form_fields, int field_count, int sizex, int 
   return result;
 }
 
-  extern FormField *
-form_field_create(enum FormFieldType type, char *value)
+  extern BpFormField *
+bp_form_field_create(enum BpFormFieldType type, char *value)
 {
-  FormField *field = (FormField *)malloc(sizeof(FormField));
+  BpFormField *field = (BpFormField *)malloc(sizeof(BpFormField));
+
   field->type = type;
   field->value = NULL;
   form_field_set_value(field, value);
+
   return field;
 }
 
   extern void
-form_field_destroy(FormField *field)
+bp_form_field_destroy(BpFormField *field)
 {
   free(field->value);
   free(field);

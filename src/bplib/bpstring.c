@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
   extern int
-bpcount_str(const char *str, const char *sub, int max)
+bp_count_str(const char *str, const char *sub, int max)
 {
   int count = 0;
 
@@ -20,13 +20,13 @@ bpcount_str(const char *str, const char *sub, int max)
 }
 
   extern char**
-bpsplit_str(char* str, char *delim, int max)
+bp_split_str(char* str, char *delim, int max)
 {
   int pieces, i, delim_len;
   char **items;
   char *tmp;
 
-  pieces = bpcount_str(str, delim, max - 1) + 1;
+  pieces = bp_count_str(str, delim, max - 1) + 1;
 
   items = (char **)calloc(pieces + 1, sizeof(char *));
 
@@ -60,7 +60,7 @@ bpsplit_str(char* str, char *delim, int max)
  *   -> "line 1\r\nline 2\r\n"
  */
   static int
-bpstr_list_len(char **list, int extra_item_length)
+bp_str_list_len(char **list, int extra_item_length)
 {
   char **it = list;
   int len = 0;
@@ -71,10 +71,10 @@ bpstr_list_len(char **list, int extra_item_length)
 }
 
   extern char *
-bpjoin_str(char **strings, char *glue, int glue_end)
+bp_join_str(char **strings, char *glue, int glue_end)
 {
   int glue_len = strlen(glue), total_len = 0;
-  int max_len = bpstr_list_len(strings, glue_len);
+  int max_len = bp_str_list_len(strings, glue_len);
 
   if (glue_end == 0)
     max_len -= glue_len;

@@ -2,10 +2,10 @@
 #define BPLIB_BPSTRING_H
 
   extern int
-bpcount_str(const char *str, const char *sub, int max);
+bp_count_str(const char *str, const char *sub, int max);
 
   extern char **
-bpsplit_str(char *str, char *delim, int max);
+bp_split_str(char *str, char *delim, int max);
 
 /*
  * Joins an array of strings using a +glue+.
@@ -23,6 +23,6 @@ bpsplit_str(char *str, char *delim, int max);
  *
  */
   extern char *
-bpjoin_str(char **strings, char *glue, int glue_end);
+bp_join_str(char **strings, char *glue, int glue_end);
 
 #endif

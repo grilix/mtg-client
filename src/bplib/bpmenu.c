@@ -57,8 +57,8 @@ draw_menu_frame(char *title, WINDOW *w, int sizex)
 }
 
   extern int
-show_menu(char *title, char **options, int options_count,
-          int sizex, int sizey, int x, int y)
+bp_show_menu(char *title, char **options, int options_count,
+             int sizex, int sizey, int x, int y)
 {
   WINDOW *w;
   MENU *menu;
