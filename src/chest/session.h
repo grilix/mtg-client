@@ -20,7 +20,4 @@ session_extract_token(Session *session, char **headers);
   extern char *
 session_create_header(Session *session);
 
-  extern int
-sign_in(Session *session, char *user, char *password);
-
 #endif

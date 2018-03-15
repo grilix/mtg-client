@@ -4,10 +4,9 @@
 
 #include "../../bplib/bpform.h"
 #include "../../bplib/bpmessage.h"
-#include "../../bplib/bpresponse.h"
-#include "../../bplib/bprequest.h"
-
 #include "../session.h"
+#include "../client/auth.h"
+
 #include "sign_in.h"
 
   extern int
