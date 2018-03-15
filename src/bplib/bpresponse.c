@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,13 +8,12 @@
 #include "bpresponse.h"
 
   extern BpResponse *
-bp_response_allocate(int max_data)
+bp_response_allocate(void)
 {
   BpResponse *response = (BpResponse *)malloc(sizeof(BpResponse));
 
   response->headers = NULL;
   response->body = NULL;
-  response->max_size = max_data;
   response->body_len = 0;
 
   return response;
@@ -51,36 +51,93 @@ bp_response_destroy(BpResponse *response)
   free(response);
 }
 
-  static void
-response_populate(BpResponse *response, char *data)
+  extern char *
+bp_response_header_value(BpResponse *response, char *name)
 {
-  char **parts = bp_split_str(data, "\r\n\r\n", 2);
+  char **it = response->headers;
+  int name_len = strlen(name);
 
-  response->headers = bp_split_str(parts[0], "\r\n", 0);
-  free(parts[0]);
+  while (*it)
+  {
+    if (strncasecmp(*it, name, name_len) == 0)
+      break;
+    it++;
+  }
 
-  /*
-   * parts[1] is now owned by response, don't free.
-   */
-  response->body = parts[1];
+  if (!*it)
+    return NULL;
 
-  free(parts);
+  return *(it) +
+         name_len + // Skip header name
+         2; // Skip ": "
+}
+
+  static void
+bp_response_set_body_length(BpResponse *response)
+{
+  char *header_value = bp_response_header_value(response, "Content-Length");
+  int len;
+
+  if (!header_value)
+    len = 0;
+  else
+    len = atoi(header_value);
+
+  response->body_len = len;
+}
+
+/*
+ * Extracts the headers from a raw response and returns the
+ * position to the body.
+ *
+ * Returns -1 if the headers were not found. This case means
+ * The headers are not complete, and we must receive another
+ * chunk from the server before we can continue.
+ *
+ * This function will never return 0.
+ *
+ * Body starting right at the beginning of the string is not
+ * allowed and will cause issues.
+ */
+  static int
+bp_response_extract_headers(BpResponse *response, char *data)
+{
+  char *body = strstr(data, "\r\n\r\n");
+
+  if (!body)
+    return -1;
+
+  assert((body - data) > 0);
+
+  char *headers_str = strndup(data, body - data);
+  response->headers = bp_split_str(headers_str, "\r\n", 0);
+
+  free(headers_str);
+
+  bp_response_set_body_length(response);
+
+  return (body - data) + 4; // Skip "\r\n\r\n"
 }
 
   extern void
 bp_response_read(int sockfd, BpResponse *response)
 {
   int received, bytes;
+
   char *data;
 
   bp_response_reset(response);
 
-  data = calloc(response->max_size + 1, sizeof(char));
+  // Start with 4kb, we might want to rewrite this whole
+  // logic to support more content in the headers.
+  int max_size = 1024 * 4;
+
+  data = calloc(max_size + 1, sizeof(char));
 
   received = 0;
 
   do {
-    bytes = read(sockfd, data + received, response->max_size - received);
+    bytes = read(sockfd, data + received, max_size - received);
 
     if (bytes < 0)
     {
@@ -93,21 +150,38 @@ bp_response_read(int sockfd, BpResponse *response)
       break;
 
     received += bytes;
-  } while (received < response->max_size);
+
+    // The first time we should have the headers already
+    if (response->headers == NULL)
+    {
+      int body_start = bp_response_extract_headers(response, data);
+
+      // If this fails, it means we got too much information
+      // in the headers.
+      assert(body_start > 0);
+
+      // Skip headers on received counter
+      received -= body_start;
+      max_size = response->body_len;
+
+      /*int missing_content_size = response->body_len - received;*/
+      assert(max_size >= received);
+
+      // Initialize a nuw buffer to hold the complete body
+      char *tmp = (char *)calloc(response->body_len + 1, sizeof(char));
+      // Copy old data
+      memcpy(tmp, data + body_start, received);
+      // Free old buffer
+      free(data);
+      // Point old buffer to the new.
+      data = tmp;
+    }
+  } while (received < max_size);
 
   close(sockfd);
 
   response->body_len = received;
+  assert(received == max_size);
 
-  if (received == response->max_size)
-  {
-    free(data);
-    perror("ERROR storing complete response from socket");
-    return;
-  }
-
-  response_populate(response, data);
-
-  free(data);
+  response->body = data;
 }
-
