@@ -94,3 +94,13 @@ session_save(Session *session, const char *filename)
   if (file)
     fputs(session->token, file);
 }
+
+  extern void
+session_drop(Session *session)
+{
+  if (session->token == NULL)
+    return;
+
+  free(session->token);
+  session->token = NULL;
+}

@@ -26,4 +26,7 @@ session_load(Session *session, const char *filename);
   extern void
 session_save(Session *session, const char *filename);
 
+  extern void
+session_drop(Session *session);
+
 #endif

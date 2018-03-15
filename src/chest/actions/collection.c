@@ -32,19 +32,25 @@ object_key(json_value *value, char *key)
   static void
 show_collection(json_value *value)
 {
+  int i;
   int items_count = value->u.array.length;
   json_value *tmp;
 
-  char **items = calloc(items_count + 1, sizeof(char *));
+  BpMenuItem **items =
+    (BpMenuItem **)calloc(items_count, sizeof(BpMenuItem *));
 
-  for (int i = 0; i < items_count; i++)
+  for (i = 0; i < items_count; i++)
   {
     tmp = object_key(value->u.array.values[i], "name");
 
-    items[i] = tmp->u.string.ptr;
+    items[i] = (BpMenuItem *)malloc(sizeof(BpMenuItem));
+    items[i]->title = tmp->u.string.ptr;
   }
 
   bp_show_menu("list", items, items_count, 30, 12, 20, 25);
+
+  for (i = 0; i < items_count; i++)
+    free(items[i]);
 
   free(items);
 }

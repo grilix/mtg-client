@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <ncurses.h>
 #include "bplib/bpform.h"
 #include "bplib/bpmenu.h"
@@ -6,21 +7,37 @@
 #include "chest/actions/sign_in.h"
 #include "chest/actions/collection.h"
 
+static BpMenuItem
+  menu_sign_in =    {.value = 0, .title = "Sign In"},
+  menu_collection = {.value = 1, .title = "Collection"},
+  menu_exit =       {.value = 2, .title = "Exit"},
+  menu_sign_out =   {.value = 3, .title = "Sign Out"};
+
   int
 main_menu(Session *session)
 {
-  int selected;
+  BpMenuItem *selected = NULL;
+  int signed_in = session->token != NULL;
 
-  char *choices[] = {
-    "Sign In",
-    "Collection",
-    "Exit",
-    "Help",
-  };
+  int choices_count = 3;
+  int current = 0;
 
-  selected = bp_show_menu("Options", choices, 3, 20, 10, 15, 15);
+  BpMenuItem **choices =
+    (BpMenuItem **)calloc(choices_count, sizeof(BpMenuItem *));
 
-  switch (selected)
+  if (signed_in)
+    choices[current++] = &menu_sign_out;
+  else
+    choices[current++] = &menu_sign_in;
+
+  choices[current++] = &menu_collection;
+  choices[current++] = &menu_exit;
+
+  selected = bp_show_menu("Options", choices, choices_count, 20, 10, 15, 15);
+
+  free(choices);
+
+  switch (selected->value)
   {
     case 0:
       sign_in_form(session);
@@ -30,10 +47,12 @@ main_menu(Session *session)
     break;
     case 2:
       return -1;
+    case 3:
+      session_drop(session);
     break;
   }
 
-  return selected;
+  return selected->value;
 }
 
   int

@@ -44,8 +44,8 @@ menu_loop(WINDOW *w, MENU *menu)
   return item_index(current_item(menu));
 }
 
-  extern int
-bp_show_menu(char *title, char **options, int options_count,
+  extern BpMenuItem *
+bp_show_menu(char *title, BpMenuItem **options, int options_count,
              int sizex, int sizey, int x, int y)
 {
   BpWindow *window;
@@ -57,7 +57,7 @@ bp_show_menu(char *title, char **options, int options_count,
   item = items;
 
   for (int i = 0; i < options_count; i++)
-    *(item++) = new_item(options[i], NULL);
+    *(item++) = new_item(options[i]->title, NULL);
 
   menu = new_menu(items);
 
@@ -81,5 +81,5 @@ bp_show_menu(char *title, char **options, int options_count,
     free_item(*(item++));
   free(items);
 
-  return selected;
+  return options[selected];
 }
