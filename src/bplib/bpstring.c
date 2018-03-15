@@ -20,7 +20,7 @@ bp_count_str(const char *str, const char *sub, int max)
 }
 
   extern char**
-bp_split_str(char* str, char *delim, int max)
+bp_split_str(const char* str, const char *delim, int max)
 {
   int pieces, i, delim_len;
   char **items;
@@ -32,13 +32,12 @@ bp_split_str(char* str, char *delim, int max)
 
   i = 0, delim_len = strlen(delim);
 
-  tmp = str;
-
   while (i < pieces - 1)
   {
-    tmp = strstr(tmp, delim);
-    items[i++] = strndup(str, tmp - str);
-    tmp = str = tmp + delim_len;
+    tmp = strstr(str, delim) + delim_len;
+
+    items[i++] = strndup(str, tmp - str - delim_len);
+    str = tmp;
   }
   items[i] = strdup(str);
 
@@ -71,7 +70,7 @@ bp_str_list_len(char **list, int extra_item_length)
 }
 
   extern char *
-bp_join_str(char **strings, char *glue, int glue_end)
+bp_join_str(char **strings, const char *glue, int glue_end)
 {
   int glue_len = strlen(glue), total_len = 0;
   int max_len = bp_str_list_len(strings, glue_len);
