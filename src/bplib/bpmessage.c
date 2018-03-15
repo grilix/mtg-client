@@ -4,7 +4,6 @@
 #include "bpwindow.h"
 #include "bpmessage.h"
 
-
   extern void
 bp_show_message(char *text, int x, int y)
 {
@@ -16,4 +15,23 @@ bp_show_message(char *text, int x, int y)
 
   getch();
   bp_window_destroy_clear(window);
+}
+
+  extern void
+bp_show_plain_message(char *format, ...)
+{
+  refresh();
+  def_prog_mode();
+  endwin();
+
+  va_list args;
+
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+
+  getch();
+
+  reset_prog_mode();
+  refresh();
 }
