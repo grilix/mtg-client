@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -29,7 +30,7 @@ session_set_token(Session *session, char *token)
 }
 
   extern int
-session_extract_token(Session *session, char **headers)
+session_extract_header(Session *session, char **headers)
 {
   char **it = headers;
   char *auth_str = "Authorization: Bearer ";
@@ -65,4 +66,31 @@ session_create_header(Session *session)
   strcat(header, session->token);
 
   return header;
+}
+
+  extern void
+session_load(Session *session, const char *filename)
+{
+  char token[255];
+  FILE *file;
+
+  file = fopen(".token", "r");
+
+  if (file)
+  {
+    fgets(token, 255, file);
+
+    session_set_token(session, token);
+  }
+}
+
+  extern void
+session_save(Session *session, const char *filename)
+{
+  FILE *file;
+
+  file = fopen(".token", "w");
+
+  if (file)
+    fputs(session->token, file);
 }

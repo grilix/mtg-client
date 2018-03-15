@@ -39,7 +39,7 @@ chest_get(Session *session, char *path)
   bp_send_get(request, response->_response);
   extract_json(response);
 
-  session_extract_token(session, response->_response->headers);
+  session_extract_header(session, response->_response->headers);
 
   bp_request_destroy(request);
 
@@ -73,7 +73,7 @@ chest_post(Session *session, char *path, char *data, int data_len)
   bp_send_post(request, response->_response);
   extract_json(response);
 
-  session_extract_token(session, response->_response->headers);
+  session_extract_header(session, response->_response->headers);
 
   bp_request_destroy(request);
 

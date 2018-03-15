@@ -48,9 +48,13 @@ main()
   init_pair(2, COLOR_CYAN, COLOR_BLACK);
   Session *session = session_allocate();
 
+  session_load(session, ".token");
+
   do {
     selected = main_menu(session);
   } while (selected != -1);
+
+  session_save(session, ".token");
 
   session_destroy(session);
   endwin();
