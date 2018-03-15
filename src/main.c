@@ -33,7 +33,11 @@ main_menu(Session *session)
   choices[current++] = &menu_collection;
   choices[current++] = &menu_exit;
 
-  selected = bp_show_menu("Options", choices, choices_count, 20, 10, 15, 15);
+  BpMenu *menu = bp_menu_create("Options", choices, choices_count,
+                                20, 10, 15, 15);
+
+  bp_menu_loop(menu);
+  selected = menu->selected;
 
   free(choices);
 
@@ -46,11 +50,14 @@ main_menu(Session *session)
       collection_menu(session);
     break;
     case 2:
+      bp_menu_destroy_clear(menu);
       return -1;
     case 3:
       session_drop(session);
     break;
   }
+
+  bp_menu_destroy_clear(menu);
 
   return selected->value;
 }

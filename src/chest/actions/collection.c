@@ -47,7 +47,7 @@ show_collection(json_value *value)
     items[i]->title = tmp->u.string.ptr;
   }
 
-  bp_show_menu("list", items, items_count, 30, 12, 20, 25);
+  bp_show_menu("Collection", items, items_count, 40, 20, 17, 18);
 
   for (i = 0; i < items_count; i++)
     free(items[i]);
