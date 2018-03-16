@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdlib.h>
 #include <ncurses.h>
 #include "bplib/bpform.h"
@@ -30,13 +31,18 @@ main_menu(Session *session)
   else
     choices[current++] = &menu_sign_in;
 
-  choices[current++] = &menu_collection;
+  if (signed_in)
+    choices[current++] = &menu_collection;
+  else
+    choices_count--;
+
   choices[current++] = &menu_exit;
 
   BpMenu *menu = bp_menu_create("Options", choices, choices_count,
                                 20, 10, 15, 15);
 
   bp_menu_loop(menu);
+
   selected = menu->selected;
 
   free(choices);
@@ -62,27 +68,39 @@ main_menu(Session *session)
   return selected->value;
 }
 
+  static void
+finish(int sig)
+{
+  endwin();
+  exit(0);
+}
+
   int
 main()
 {
+  signal(SIGINT, finish);
+
   int selected;
 
   initscr();
+  refresh();
+
   start_color();
 
   init_pair(1, COLOR_RED, COLOR_BLACK);
   init_pair(2, COLOR_CYAN, COLOR_BLACK);
   Session *session = session_allocate();
 
-  session_load(session, ".token");
+  //session_load(session, ".token");
 
   do {
     selected = main_menu(session);
   } while (selected != -1);
 
-  session_save(session, ".token");
+  //session_save(session, ".token");
 
   session_destroy(session);
+
   endwin();
 
   return 0;

@@ -1,10 +1,40 @@
 #ifndef BPLIB_BPWINDOW_H
 #define BPLIB_BPWINDOW_H
 
-/*
- * Just wrap ncurses' WINDOW for now.
- */
-typedef WINDOW BpWindow;
+enum _BpWindowStatus
+{
+  /*
+   * The user is interacting with this window
+   */
+  BP_WINDOW_STATUS_LOOPING,
+  /*
+   * The user finished interacting with this window
+   */
+  BP_WINDOW_STATUS_COMPLETE,
+};
+
+typedef enum _BpWindowStatus BpWindowStatus;
+
+struct _BpWindow
+{
+  BpWindowStatus status;
+
+  void *widget;
+  //BpWidget *widget;
+
+  void (*_custom_driver)(struct _BpWindow *window, int ch);
+  WINDOW *_window;
+};
+
+typedef struct _BpWindow BpWindow;
+
+typedef void (*BpInputDriver)(struct _BpWindow *window, int ch);
+
+  extern void
+bp_window_set_custom_driver(BpWindow *window, BpInputDriver driver);
+
+  extern void
+bp_window_loop(BpWindow *window);
 
 /*
  * Creates a window with a title.

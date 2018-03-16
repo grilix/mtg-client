@@ -30,7 +30,7 @@ object_key(json_value *value, char *key)
 }
 
   static void
-show_collection(json_value *value)
+show_collection(BpMenu *menu, json_value *value)
 {
   int i;
   int items_count = value->u.array.length;
@@ -47,7 +47,8 @@ show_collection(json_value *value)
     items[i]->title = tmp->u.string.ptr;
   }
 
-  bp_show_menu("Collection", items, items_count, 40, 20, 17, 18);
+  bp_menu_set_items(menu, items, items_count);
+  bp_menu_loop(menu);
 
   for (i = 0; i < items_count; i++)
     free(items[i]);
@@ -57,7 +58,7 @@ show_collection(json_value *value)
 
 
   static void
-process_json(ChestResponse *response)
+process_json(BpMenu *menu, ChestResponse *response)
 {
   json_value *root = response->json;
   json_value *tmp;
@@ -78,18 +79,21 @@ process_json(ChestResponse *response)
     return;
   }
 
-  show_collection(tmp);
+  show_collection(menu, tmp);
 }
 
   extern void
 collection_menu(Session *session)
 {
+  BpMenu *menu = bp_menu_create("Collection", NULL, 0, 40, 20, 17, 18);
+
   ChestResponse *response = chest_get_collection(session);
 
   if (response->json == NULL)
     bp_show_message("Can't process the response.", 10, 10);
   else
-    process_json(response);
+    process_json(menu, response);
 
+  bp_menu_destroy_clear(menu);
   chest_response_destroy(response);
 }
