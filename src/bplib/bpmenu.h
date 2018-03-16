@@ -16,6 +16,8 @@ typedef struct _BpMenuItem BpMenuItem;
 struct _BpMenu
 {
   BpMenuItem *selected;
+  int sizex, sizey;
+  BpWindowStatus status;
 
   ITEM **_items;
   MENU *_menu;
@@ -25,16 +27,21 @@ struct _BpMenu
 
 typedef struct _BpMenu BpMenu;
 
-  extern BpMenuItem *
-bp_show_menu(char *title, BpMenuItem **options, int options_count,
-             int sizex, int sizey, int x, int y);
+  extern void
+bp_menu_loop_start(BpMenu *menu);
+
+  extern void
+bp_menu_loop_handler(BpMenu *menu);
 
   extern void
 bp_menu_loop(BpMenu *menu);
 
   extern BpMenu *
-bp_menu_create(char *title, BpMenuItem **options, int options_count,
+bp_menu_create(char *title, BpMenuItem **items, int items_count,
               int sizex, int sizey, int x, int y);
+
+  extern void
+bp_menu_set_items(BpMenu *menu, BpMenuItem **items, int items_count);
 
   extern void
 bp_menu_destroy_clear(BpMenu *menu);

@@ -15,5 +15,9 @@ $(name): $(objects)
 
 debug: $(name)
 	valgrind --leak-check=full ./$(name)
+
+run: $(name)
+	./$(name)
+
 clean:
-	rm -f $(objects)
+	rm -f $(objects) $(name)

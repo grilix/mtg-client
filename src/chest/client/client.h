@@ -22,4 +22,16 @@ chest_get(Session *session, char *path);
   extern void
 chest_response_destroy(ChestResponse *response);
 
+// Auth
+  extern int
+sign_in(Session *session, char *user, char *password);
+
+// Collection
+  extern ChestResponse *
+chest_get_collection(Session *session);
+
+// Decks
+  extern ChestResponse *
+chest_get_decks(Session *session);
+
 #endif

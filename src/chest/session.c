@@ -58,12 +58,17 @@ session_create_header(Session *session)
     return NULL;
 
   char *auth = "Authorization: Bearer ";
-  int total_len = strlen(auth) + strlen(session->token);
+  int auth_len = strlen(auth);
+  int token_len = strlen(session->token);
+  int total_len = auth_len + token_len;
 
   char *header = (char *)calloc(total_len + 1, 1);
 
-  strcat(header, auth);
-  strcat(header, session->token);
+  memcpy(header, auth, auth_len);
+  memcpy(header + auth_len, session->token, token_len);
+
+  /*strncat(header, auth, strlen(auth));*/
+  /*strncat(header, session->token, strlen(session->token));*/
 
   return header;
 }
@@ -74,13 +79,21 @@ session_load(Session *session, const char *filename)
   char token[255];
   FILE *file;
 
+  // There's no real min/max length for the token,
+  // this is just a guess.
+  int min_len = 2 + // dots for: header.value.signature
+                4 + // minimun header: "{}" = "e30K"
+                4 + // minimum body: "{}" = "e30K"
+                1;  // signature could be anything
+
   file = fopen(".token", "r");
 
   if (file)
   {
     fgets(token, 255, file);
 
-    session_set_token(session, token);
+    if (strlen(token) > min_len)
+      session_set_token(session, token);
   }
 }
 
@@ -92,7 +105,12 @@ session_save(Session *session, const char *filename)
   file = fopen(".token", "w");
 
   if (file)
-    fputs(session->token, file);
+  {
+    if (session->token)
+      fputs(session->token, file);
+    else
+      fputs("", file);
+  }
 }
 
   extern void

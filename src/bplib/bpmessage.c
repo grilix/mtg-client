@@ -9,11 +9,11 @@ bp_show_message(char *text, int x, int y)
 {
   BpWindow *window = bp_window_create_box(strlen(text) + 4, 5, x, y);
 
-  mvwprintw(window, 2, 2, "%s", text);
+  mvwprintw(window->_window, 2, 2, "%s", text);
 
-  wrefresh(window);
+  wrefresh(window->_window);
 
-  getch();
+  wgetch(window->_window);
   bp_window_destroy_clear(window);
 }
 

@@ -1,7 +1,7 @@
 #ifndef ACTIONS_SIGN_IN_H
 #define ACTIONS_SIGN_IN_H
 
-  extern int
+  extern void
 sign_in_form(Session *session);
 
 #endif

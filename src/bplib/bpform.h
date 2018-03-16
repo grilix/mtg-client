@@ -4,17 +4,8 @@
 #include "bpwindow.h"
 #include "form.h"
 
-/*
- * The user sent the form and the operation was successful.
- */
 #define BP_FORM_OK 1
-/*
- * The user cancelled the form.
- */
 #define BP_FORM_CANCEL 2
-/*
- * The user sent the form but the operation failed.
- */
 #define BP_FORM_ERR 3
 
 enum BpFormFieldType
@@ -36,6 +27,7 @@ struct _BpForm
 {
   int sizex, sizey, x, y;
 
+  BpWindowStatus status;
   /*
    * Internal: Holds the form fields.
    */
@@ -76,7 +68,7 @@ bp_form_create(char *title, BpFormField **form_fields, int field_count,
  * a common form driver.
  *
  */
-  extern int
+  extern void
 bp_form_loop(BpForm *form);
 
 /*
@@ -102,16 +94,8 @@ bp_form_update_fields(BpForm *form, BpFormField **fields, int field_count);
   extern void
 bp_form_destroy(BpForm *form);
 
-/*
- * Handles the whole form lifecyle, from creation, looping,
- * storing using input back to the given fields and then
- * freeing the allocated memory.
- *
- * Returns the form result which indicates the user intention.
- */
   extern int
-bp_show_form(char *title, BpFormField **fields, int field_count,
-             int sizex, int sizey, int x, int y);
+bp_form_should_loop(BpForm *form);
 
 /*
  * Sets the initial value for a form field.

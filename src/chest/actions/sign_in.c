@@ -5,15 +5,14 @@
 #include "../../bplib/bpform.h"
 #include "../../bplib/bpmessage.h"
 #include "../session.h"
-#include "../client/auth.h"
+#include "../client/client.h"
 
 #include "sign_in.h"
 
-  extern int
+  extern void
 sign_in_form(Session *session)
 {
   BpFormField **fields;
-  int result;
 
   fields = (BpFormField **)calloc(4, sizeof(BpFormField *));
   fields[0] = bp_form_field_create(BP_FORM_FIELD_TYPE_LABEL, "Name");
@@ -25,24 +24,26 @@ sign_in_form(Session *session)
 
   do
   {
-    result = bp_form_loop(form);
+    bp_form_loop(form);
 
-    if (result == BP_FORM_OK)
+    if (form->status == BP_WINDOW_STATUS_PROCESSING)
     {
       bp_form_sync_input(form);
 
       if (sign_in(session, fields[1]->value, fields[3]->value) == 0)
-        result = BP_FORM_OK;
+        form->status = BP_WINDOW_STATUS_COMPLETE;
       else
       {
         bp_show_message("Login failed.", 14, 13);
         bp_form_field_set_value(fields[3], "");
         bp_form_update_fields(form, fields, 4);
 
-        result = BP_FORM_ERR;
+        form->status = BP_WINDOW_STATUS_LOOPING;
       }
     }
-  } while ((result != BP_FORM_OK) && (result != BP_FORM_CANCEL));
+  } while (form->status == BP_WINDOW_STATUS_LOOPING);
+
+  form->_main_win->status = BP_WINDOW_STATUS_COMPLETE;
 
   bp_form_destroy(form);
 
@@ -50,6 +51,4 @@ sign_in_form(Session *session)
     bp_form_field_destroy(fields[i]);
 
   free(fields);
-
-  return result;
 }

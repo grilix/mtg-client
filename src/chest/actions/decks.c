@@ -3,7 +3,7 @@
 #include <ncurses.h>
 
 #include "../session.h"
-#include "collection.h"
+#include "decks.h"
 
 #include "../../bplib/bpmessage.h"
 #include "../../bplib/bpmenu.h"
@@ -33,7 +33,7 @@ show_details(BpMenu *menu)
 {
   BpWindow *details = bp_window_create_frame("Details", 30, 10, 45, 15);
 
-  mvwprintw(details->_window, 3, 2, "%s", menu->selected->title);
+  mvwprintw(details->_window, 2, 2, "%s", menu->selected->title);
   wrefresh(details->_window);
 
   bp_window_getch(menu->_window);
@@ -41,7 +41,7 @@ show_details(BpMenu *menu)
 }
 
   static void
-show_collection(BpMenu *menu, json_value *value)
+show_decks(BpMenu *menu, json_value *value)
 {
   int i;
   int items_count = value->u.array.length;
@@ -49,7 +49,7 @@ show_collection(BpMenu *menu, json_value *value)
 
   if (items_count == 0)
   {
-    bp_show_message("No cards in your collection", 20, 22);
+    bp_show_message("No decks found", 20, 22);
     return;
   }
 
@@ -79,6 +79,7 @@ show_collection(BpMenu *menu, json_value *value)
         show_details(menu);
         wrefresh(menu->_window->_window);
       }
+
       menu->status = BP_WINDOW_STATUS_LOOPING;
     }
  } while (menu->status == BP_WINDOW_STATUS_LOOPING);
@@ -104,23 +105,23 @@ process_json(BpMenu *menu, ChestResponse *response)
     return;
   }
 
-  tmp = object_key(root, "cards");
+  tmp = object_key(root, "decks");
 
   if (!tmp)
   {
-    bp_show_message("Unknown response structure for collection.", 10, 10);
+    bp_show_message("Unknown response structure for decks.", 10, 10);
     return;
   }
 
-  show_collection(menu, tmp);
+  show_decks(menu, tmp);
 }
 
   extern void
-collection_menu(Session *session)
+decks_menu(Session *session)
 {
-  BpMenu *menu = bp_menu_create("Collection", NULL, 0, 40, 20, 17, 18);
+  BpMenu *menu = bp_menu_create("Decks", NULL, 0, 40, 20, 17, 18);
 
-  ChestResponse *response = chest_get_collection(session);
+  ChestResponse *response = chest_get_decks(session);
 
   if (response->json == NULL)
     bp_show_message("Can't process the response.", 10, 10);

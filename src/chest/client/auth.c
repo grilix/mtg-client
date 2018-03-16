@@ -3,7 +3,6 @@
 #include "../../bplib/bpresponse.h"
 #include "../session.h"
 #include "client.h"
-#include "auth.h"
 
   extern int
 sign_in(Session *session, char *user, char *password)
