@@ -3,7 +3,7 @@
 #include <ncurses.h>
 
 #include "../session.h"
-#include "collection.h"
+#include "actions.h"
 
 #include "../../bplib/bpmessage.h"
 #include "../../bplib/bpmenu.h"

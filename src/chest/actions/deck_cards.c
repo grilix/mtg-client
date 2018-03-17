@@ -29,7 +29,19 @@ object_key(json_value *value, char *key)
 }
 
   static void
-show_decks(Session *session, BpMenu *menu, json_value *value)
+show_details(BpMenu *menu)
+{
+  BpWindow *details = bp_window_create_frame("Details", 30, 10, 45, 15);
+
+  mvwprintw(details->_window, 3, 2, "%s", menu->selected->title);
+  wrefresh(details->_window);
+
+  bp_window_getch(menu->_window);
+  bp_window_destroy_clear(details);
+}
+
+  static void
+show_collection(BpMenu *menu, json_value *value)
 {
   int i;
   int items_count = value->u.array.length;
@@ -37,7 +49,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 
   if (items_count == 0)
   {
-    bp_show_message("No decks found", 20, 22);
+    bp_show_message("No cards in this deck", 20, 22);
     return;
   }
 
@@ -50,9 +62,6 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 
     items[i] = (BpMenuItem *)malloc(sizeof(BpMenuItem));
     items[i]->title = tmp->u.string.ptr;
-
-    tmp = object_key(value->u.array.values[i], "id");
-    items[i]->value = tmp->u.integer;
   }
 
   bp_menu_set_items(menu, items, items_count);
@@ -67,10 +76,9 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
     {
       if (menu->selected != NULL)
       {
-        deck_cards_menu(session, menu->selected->value);
+        show_details(menu);
         wrefresh(menu->_window->_window);
       }
-
       menu->status = BP_WINDOW_STATUS_LOOPING;
     }
  } while (menu->status == BP_WINDOW_STATUS_LOOPING);
@@ -83,7 +91,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 
 
   static void
-process_json(Session *session, BpMenu *menu, ChestResponse *response)
+process_json(BpMenu *menu, ChestResponse *response)
 {
   json_value *root = response->json;
   json_value *tmp;
@@ -96,28 +104,28 @@ process_json(Session *session, BpMenu *menu, ChestResponse *response)
     return;
   }
 
-  tmp = object_key(root, "decks");
+  tmp = object_key(root, "cards");
 
   if (!tmp)
   {
-    bp_show_message("Unknown response structure for decks.", 10, 10);
+    bp_show_message("Unknown response structure for collection.", 10, 10);
     return;
   }
 
-  show_decks(session, menu, tmp);
+  show_collection(menu, tmp);
 }
 
   extern void
-decks_menu(Session *session)
+deck_cards_menu(Session *session, int deck_id)
 {
-  BpMenu *menu = bp_menu_create("Decks", NULL, 0, 40, 20, 17, 18);
+  BpMenu *menu = bp_menu_create("Deck cards", NULL, 0, 40, 20, 25, 22);
 
-  ChestResponse *response = chest_get_decks(session);
+  ChestResponse *response = chest_get_deck_cards(session, deck_id);
 
   if (response->json == NULL)
     bp_show_message("Can't process the response.", 10, 10);
   else
-    process_json(session, menu, response);
+    process_json(menu, response);
 
   bp_menu_destroy_clear(menu);
   chest_response_destroy(response);

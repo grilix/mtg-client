@@ -34,4 +34,7 @@ chest_get_collection(Session *session);
   extern ChestResponse *
 chest_get_decks(Session *session);
 
+  extern ChestResponse *
+chest_get_deck_cards(Session *session, int deck_id);
+
 #endif

@@ -5,9 +5,7 @@
 #include "bplib/bpmenu.h"
 #include "bplib/bpmessage.h"
 #include "chest/session.h"
-#include "chest/actions/sign_in.h"
-#include "chest/actions/collection.h"
-#include "chest/actions/decks.h"
+#include "chest/actions/actions.h"
 
 static BpMenuItem
   menu_sign_in =    {.value = 0, .title = "Sign In"},
