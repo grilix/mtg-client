@@ -10,7 +10,7 @@
 #include "actions.h"
 
   extern void
-sign_in_form(Session *session)
+sign_in_form(Session *session, int x, int y)
 {
   BpFormField **fields;
 
@@ -20,7 +20,7 @@ sign_in_form(Session *session)
   fields[2] = bp_form_field_create(BP_FORM_FIELD_TYPE_LABEL, "Password");
   fields[3] = bp_form_field_create(BP_FORM_FIELD_TYPE_PASSWORD, "");
 
-  BpForm *form = bp_form_create("Sign in", fields, 4, 40, 10, 10, 10);
+  BpForm *form = bp_form_create("Sign in", fields, 4, 40, 10, x, y);
 
   do
   {
@@ -34,7 +34,7 @@ sign_in_form(Session *session)
         form->status = BP_WINDOW_STATUS_COMPLETE;
       else
       {
-        bp_show_message("Login failed.", 14, 13);
+        bp_show_message("Login failed.", x + 5, y + 2);
         bp_form_field_set_value(fields[3], "");
         bp_form_update_fields(form, fields, 4);
 

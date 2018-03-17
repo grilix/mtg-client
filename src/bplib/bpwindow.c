@@ -26,13 +26,32 @@ bp_window_driver(BpWindow *window, int ch)
   return false;
 }
 
-  extern BpWindow *
-bp_window_create_frame(char *title, int sizex, int sizey, int x, int y)
+  extern void
+bp_window_refresh(BpWindow *window)
+{
+  touchwin(window->_window);
+}
+
+  static BpWindow *
+bp_window_create(int sizex, int sizey, int x, int y)
 {
   BpWindow *window = (BpWindow *)malloc(sizeof(BpWindow));
 
+  window->x = x;
+  window->y = y;
+  window->sizex = sizex;
+  window->sizey = sizey;
   window->_window = newwin(sizey, sizex, y, x);
-  bp_window_draw_frame(title, window, sizex);
+
+  return window;
+}
+
+  extern BpWindow *
+bp_window_create_frame(char *title, int sizex, int sizey, int x, int y)
+{
+  BpWindow *window = bp_window_create(sizex, sizey, x, y);
+
+  bp_window_draw_frame(title, window);
 
   return window;
 }
@@ -40,9 +59,7 @@ bp_window_create_frame(char *title, int sizex, int sizey, int x, int y)
   extern BpWindow *
 bp_window_create_box(int sizex, int sizey, int x, int y)
 {
-  BpWindow *window = (BpWindow *)malloc(sizeof(BpWindow));
-
-  window->_window = newwin(sizey, sizex, y, x);
+  BpWindow *window = bp_window_create(sizex, sizey, x, y);
 
   box(window->_window, 0, 0);
 
@@ -67,7 +84,7 @@ bp_window_destroy_clear(BpWindow *window)
 }
 
   extern void
-bp_window_draw_frame(char *title, BpWindow *window, int sizex)
+bp_window_draw_frame(char *title, BpWindow *window)
 {
   box(window->_window, 0, 0);
   wattron(window->_window, COLOR_PAIR(1));
@@ -75,6 +92,6 @@ bp_window_draw_frame(char *title, BpWindow *window, int sizex)
   wattroff(window->_window, COLOR_PAIR(1));
 
   mvwaddch(window->_window, 2, 0, ACS_LTEE);
-  mvwhline(window->_window, 2, 1, ACS_HLINE, sizex - 2);
-  mvwaddch(window->_window, 2, sizex - 1, ACS_RTEE);
+  mvwhline(window->_window, 2, 1, ACS_HLINE, window->sizex - 2);
+  mvwaddch(window->_window, 2, window->sizex - 1, ACS_RTEE);
 }

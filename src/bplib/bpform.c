@@ -83,7 +83,7 @@ bp_form_loop(BpForm *form)
   form->status = form->_main_win->status = BP_WINDOW_STATUS_LOOPING;
 
   do {
-    ch = wgetch(form->_main_win->_window);
+    ch = bp_window_getch(form->_main_win);
 
     if (!bp_window_driver(form->_main_win, ch))
       bp_form_driver(form, ch);

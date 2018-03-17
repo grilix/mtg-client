@@ -1,3 +1,4 @@
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -5,6 +6,24 @@
 #include "../../bplib/bprequest.h"
 #include "../../bplib/bpresponse.h"
 #include "client.h"
+
+  extern json_value *
+json_object_key(json_value *value, char *key)
+{
+  if (value == NULL || (value->type != json_object))
+    return NULL;
+
+  int length, x;
+
+  length = value->u.object.length;
+
+  for (x = 0; x < length; x++) {
+    if (strcmp(value->u.object.values[x].name, key) == 0)
+      return value->u.object.values[x].value;
+  }
+
+  return NULL;
+}
 
   static void
 extract_json(ChestResponse *response)

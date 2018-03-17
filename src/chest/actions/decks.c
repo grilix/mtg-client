@@ -10,24 +10,6 @@
 
 #include "../client/client.h"
 
-  static json_value *
-object_key(json_value *value, char *key)
-{
-  if (value == NULL || (value->type != json_object))
-    return NULL;
-
-  int length, x;
-
-  length = value->u.object.length;
-
-  for (x = 0; x < length; x++) {
-    if (strcmp(value->u.object.values[x].name, key) == 0)
-      return value->u.object.values[x].value;
-  }
-
-  return NULL;
-}
-
   static void
 show_decks(Session *session, BpMenu *menu, json_value *value)
 {
@@ -46,12 +28,12 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 
   for (i = 0; i < items_count; i++)
   {
-    tmp = object_key(value->u.array.values[i], "name");
+    tmp = json_object_key(value->u.array.values[i], "name");
 
     items[i] = (BpMenuItem *)malloc(sizeof(BpMenuItem));
     items[i]->title = tmp->u.string.ptr;
 
-    tmp = object_key(value->u.array.values[i], "id");
+    tmp = json_object_key(value->u.array.values[i], "id");
     items[i]->value = tmp->u.integer;
   }
 
@@ -67,8 +49,8 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
     {
       if (menu->selected != NULL)
       {
-        deck_cards_menu(session, menu->selected->value);
-        wrefresh(menu->_window->_window);
+        deck_cards_menu(session, menu->selected->value, 15, 15);
+        bp_window_refresh(menu->_window);
       }
 
       menu->status = BP_WINDOW_STATUS_LOOPING;
@@ -88,7 +70,7 @@ process_json(Session *session, BpMenu *menu, ChestResponse *response)
   json_value *root = response->json;
   json_value *tmp;
 
-  tmp = object_key(root, "error");
+  tmp = json_object_key(root, "error");
 
   if (tmp)
   {
@@ -96,7 +78,7 @@ process_json(Session *session, BpMenu *menu, ChestResponse *response)
     return;
   }
 
-  tmp = object_key(root, "decks");
+  tmp = json_object_key(root, "decks");
 
   if (!tmp)
   {
@@ -108,14 +90,14 @@ process_json(Session *session, BpMenu *menu, ChestResponse *response)
 }
 
   extern void
-decks_menu(Session *session)
+decks_menu(Session *session, int x, int y)
 {
-  BpMenu *menu = bp_menu_create("Decks", NULL, 0, 40, 20, 17, 18);
+  BpMenu *menu = bp_menu_create("Decks", NULL, 0, 40, 20, x, y);
 
   ChestResponse *response = chest_get_decks(session);
 
   if (response->json == NULL)
-    bp_show_message("Can't process the response.", 10, 10);
+    bp_show_message("Can't process the response.", x, y);
   else
     process_json(session, menu, response);
 

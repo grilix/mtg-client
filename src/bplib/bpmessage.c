@@ -11,9 +11,7 @@ bp_show_message(char *text, int x, int y)
 
   mvwprintw(window->_window, 2, 2, "%s", text);
 
-  wrefresh(window->_window);
-
-  wgetch(window->_window);
+  bp_window_getch(window);
   bp_window_destroy_clear(window);
 }
 

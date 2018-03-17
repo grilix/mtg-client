@@ -13,6 +13,9 @@ struct _ChestResponse
 
 typedef struct _ChestResponse ChestResponse;
 
+  extern json_value *
+json_object_key(json_value *value, char *key);
+
   extern ChestResponse *
 chest_post(Session *session, char *path, char *data, int data_len);
 

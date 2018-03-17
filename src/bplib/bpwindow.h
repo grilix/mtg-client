@@ -33,6 +33,8 @@ typedef enum _BpWindowStatus BpWindowStatus;
 struct _BpWindow
 {
   BpWindowStatus status;
+  int x, y;
+  int sizex, sizey;
 
   WINDOW *_window;
 };
@@ -44,6 +46,9 @@ bp_window_getch(BpWindow *window);
 
   extern bool
 bp_window_driver(BpWindow *window, int ch);
+
+  extern void
+bp_window_refresh(BpWindow *window);
 
 /*
  * Creates a window with a title.
@@ -61,7 +66,7 @@ bp_window_create_box(int sizex, int sizey, int x, int y);
  * Draws a frame for a window with a title.
  */
   extern void
-bp_window_draw_frame(char *title, BpWindow *window, int sizex);
+bp_window_draw_frame(char *title, BpWindow *window);
 
 /*
  * Destroys a window but doesn't clear its contents.
