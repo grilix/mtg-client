@@ -77,31 +77,38 @@ bp_menu_destroy_items(BpMenu *menu)
   if (menu->_items == NULL)
     return;
 
-  ITEM **item;
+  ITEM **item = menu->_items;
 
-  item = menu->_items;
   while (*item)
     free_item(*(item++));
+
   free(menu->_items);
 }
 
   extern void
 bp_menu_set_items(BpMenu *menu, BpMenuItem **items, int items_count)
 {
-  ITEM **item;
+  if (menu->_menu != NULL)
+  {
+    unpost_menu(menu->_menu);
+    free_menu(menu->_menu);
+  }
 
   bp_menu_destroy_items(menu);
 
-  menu->_menu_items = items;
-  menu->_items = (ITEM **)calloc(items_count + 1, sizeof(ITEM *));
+  if (items_count == 0)
+  {
+    menu->_menu_items  = NULL;
+    menu->_items = NULL;
+  }
+  else
+  {
+    menu->_menu_items = items;
+    menu->_items = (ITEM **)calloc(items_count + 1, sizeof(ITEM *));
 
-  item = menu->_items;
-
-  for (int i = 0; i < items_count; i++)
-    *(item++) = new_item(items[i]->title, NULL);
-
-  if (menu->_menu != NULL)
-    free_menu(menu->_menu);
+    for (int i = 0; i < items_count; i++)
+      menu->_items[i] = new_item(items[i]->title, NULL);
+  }
 
   menu->_menu = new_menu(menu->_items);
 
@@ -127,7 +134,6 @@ bp_menu_create(char *title, BpMenuItem **options, int options_count,
   menu->sizey = sizey;
   menu->selected = NULL;
 
-  menu->_menu_items = options;
   menu->_window = bp_window_create_frame(title, sizex, sizey, x, y);
 
   bp_menu_set_items(menu, options, options_count);

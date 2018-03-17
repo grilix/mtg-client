@@ -34,7 +34,6 @@ struct _BpWindow
 {
   BpWindowStatus status;
 
-  void (*_custom_driver)(struct _BpWindow *window, int ch);
   WINDOW *_window;
 };
 

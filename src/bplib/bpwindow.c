@@ -30,7 +30,6 @@ bp_window_driver(BpWindow *window, int ch)
 bp_window_create_frame(char *title, int sizex, int sizey, int x, int y)
 {
   BpWindow *window = (BpWindow *)malloc(sizeof(BpWindow));
-  window->_custom_driver = NULL;
 
   window->_window = newwin(sizey, sizex, y, x);
   bp_window_draw_frame(title, window, sizex);
@@ -42,7 +41,6 @@ bp_window_create_frame(char *title, int sizex, int sizey, int x, int y)
 bp_window_create_box(int sizex, int sizey, int x, int y)
 {
   BpWindow *window = (BpWindow *)malloc(sizeof(BpWindow));
-  window->_custom_driver = NULL;
 
   window->_window = newwin(sizey, sizex, y, x);
 

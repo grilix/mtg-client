@@ -14,8 +14,8 @@ static BpMenuItem
   menu_sign_out =   {.value = 3, .title = "Sign Out"},
   menu_decks =      {.value = 4, .title = "Decks"};
 
-  int
-main_menu(Session *session)
+  static void
+main_menu(Session *session, BpMenu *menu)
 {
   BpMenuItem *selected = NULL;
   int signed_in = session->token != NULL;
@@ -41,38 +41,37 @@ main_menu(Session *session)
 
   choices[current++] = &menu_exit;
 
-  BpMenu *menu = bp_menu_create("Options", choices, choices_count,
-                                20, 10, 15, 15);
+  bp_menu_set_items(menu, choices, choices_count);
 
   bp_menu_loop(menu);
 
-  selected = menu->selected;
-
-  free(choices);
-
-  switch (selected->value)
+  if (menu->_window->status == BP_WINDOW_STATUS_LOOPING)
   {
-    case 0:
-      sign_in_form(session);
-    break;
-    case 1:
+    selected = menu->selected;
+
+    if (selected == &menu_exit)
+    {
+      menu->_window->status = BP_WINDOW_STATUS_COMPLETE;
+    }
+    else if (selected == &menu_collection)
+    {
       collection_menu(session);
-    break;
-    case 2:
-      bp_menu_destroy_clear(menu);
-      return -1;
-    break;
-    case 3:
+    }
+    else if (selected == &menu_sign_in)
+    {
+      sign_in_form(session);
+    }
+    else if (selected == &menu_sign_out)
+    {
       session_drop(session);
-    break;
-    case 4:
+    }
+    else if (selected == &menu_decks)
+    {
       decks_menu(session);
-    break;
+    }
   }
 
-  bp_menu_destroy_clear(menu);
-
-  return selected->value;
+  free(choices);
 }
 
   static void
@@ -82,12 +81,22 @@ finish(int sig)
   exit(0);
 }
 
-  int
+  static void
+main_loop(Session *session, int x, int y)
+{
+  BpMenu *menu = bp_menu_create("Options", NULL, 0, 20, 10, x, y);
+
+  do {
+    main_menu(session, menu);
+  } while (menu->_window->status == BP_WINDOW_STATUS_LOOPING);
+
+  bp_menu_destroy_clear(menu);
+}
+
+  extern int
 main()
 {
   signal(SIGINT, finish);
-
-  int selected;
 
   initscr();
   refresh();
@@ -100,9 +109,7 @@ main()
 
   session_load(session, ".token");
 
-  do {
-    selected = main_menu(session);
-  } while (selected != -1);
+  main_loop(session, 15, 15);
 
   session_save(session, ".token");
 
