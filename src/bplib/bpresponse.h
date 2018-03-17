@@ -10,14 +10,11 @@ struct _BpResponse
 
 typedef struct _BpResponse BpResponse;
 
-  extern BpResponse *
-bp_response_allocate(void);
-
   extern void
 bp_response_destroy(BpResponse *response);
 
-  extern void
-bp_response_read(int sockfd, BpResponse *response);
+  extern BpResponse *
+bp_response_read(int sockfd);
 
   extern char *
 bp_response_header_value(BpResponse *response, char *name);

@@ -7,14 +7,51 @@
 #include "bpstring.h"
 #include "bpresponse.h"
 
-  extern BpResponse *
-bp_response_allocate(void)
+  static void
+bp_response_set_body_length(BpResponse *response)
+{
+  char *header_value = bp_response_header_value(response, "Content-Length");
+  int len;
+
+  if (!header_value)
+    len = 0;
+  else
+    len = atoi(header_value);
+
+  response->body_len = len;
+}
+
+  static char **
+bp_response_extract_headers(BpResponse *response, char *data, int headers_len)
+{
+  char *headers_str = strndup(data, headers_len);
+
+  if (headers_str == NULL)
+    return NULL;
+
+  char **headers = bp_split_str(headers_str, "\r\n", 0);
+
+  free(headers_str);
+
+  return headers;
+}
+
+  static BpResponse *
+bp_response_create(char *data, int headers_len)
 {
   BpResponse *response = (BpResponse *)malloc(sizeof(BpResponse));
 
-  response->headers = NULL;
+  response->headers = bp_response_extract_headers(response, data, headers_len);
+
+  if (response->headers == NULL)
+  {
+    free(response);
+    return NULL;
+  }
+
+  bp_response_set_body_length(response);
+
   response->body = NULL;
-  response->body_len = 0;
 
   return response;
 }
@@ -32,8 +69,8 @@ bp_response_destroy_headers(BpResponse *response)
   response->headers = NULL;
 }
 
-  static void
-bp_response_reset(BpResponse *response)
+  extern void
+bp_response_destroy(BpResponse *response)
 {
   bp_response_destroy_headers(response);
 
@@ -42,12 +79,6 @@ bp_response_reset(BpResponse *response)
     free(response->body);
     response->body = NULL;
   }
-}
-
-  extern void
-bp_response_destroy(BpResponse *response)
-{
-  bp_response_reset(response);
   free(response);
 }
 
@@ -72,116 +103,104 @@ bp_response_header_value(BpResponse *response, char *name)
          2; // Skip ": "
 }
 
-  static void
-bp_response_set_body_length(BpResponse *response)
+  extern BpResponse *
+bp_response_read(int sockfd)
 {
-  char *header_value = bp_response_header_value(response, "Content-Length");
-  int len;
+  BpResponse *response = NULL;
 
-  if (!header_value)
-    len = 0;
-  else
-    len = atoi(header_value);
-
-  response->body_len = len;
-}
-
-/*
- * Extracts the headers from a raw response and returns the
- * position to the body.
- *
- * Returns -1 if the headers were not found. This case means
- * The headers are not complete, and we must receive another
- * chunk from the server before we can continue.
- *
- * This function will never return 0.
- *
- * Body starting right at the beginning of the string is not
- * allowed and will cause issues.
- */
-  static int
-bp_response_extract_headers(BpResponse *response, char *data)
-{
-  char *body = strstr(data, "\r\n\r\n");
-
-  if (!body)
-    return -1;
-
-  assert((body - data) > 0);
-
-  char *headers_str = strndup(data, body - data);
-  response->headers = bp_split_str(headers_str, "\r\n", 0);
-
-  free(headers_str);
-
-  bp_response_set_body_length(response);
-
-  return (body - data) + 4; // Skip "\r\n\r\n"
-}
-
-  extern void
-bp_response_read(int sockfd, BpResponse *response)
-{
   int received, bytes;
 
   char *data;
-
-  bp_response_reset(response);
 
   // Start with 4kb, we might want to rewrite this whole
   // logic to support more content in the headers.
   int max_size = 1024 * 4;
 
-  data = calloc(max_size + 1, sizeof(char));
+  data = (char *)malloc((max_size + 1) * sizeof(char));
+  if (data == NULL)
+    return NULL;
 
   received = 0;
 
   do {
-    bytes = read(sockfd, data + received, max_size - received);
+    int block_size = max_size - received;
+
+    bytes = read(sockfd, data + received, block_size);
 
     if (bytes < 0)
     {
-      perror("ERROR reading response from socket");
+      if (response != NULL)
+      {
+        bp_response_destroy(response);
+        response = NULL;
+      }
       free(data);
-      return;
+      break;
     }
 
-    if (bytes == 0)
-      break;
+    // TODO: What does (bytes == 0) even mean?
+    assert(bytes != 0);
 
     received += bytes;
 
     // The first time we should have the headers already
-    if (response->headers == NULL)
+    if (response == NULL)
     {
-      int body_start = bp_response_extract_headers(response, data);
+      data[received] = '\0';
+      char *body = strstr(data, "\r\n\r\n");
 
-      // If this fails, it means we got too much information
-      // in the headers.
-      assert(body_start > 0);
+      if (body)
+      {
+        int headers_len = body - data;
+        response = bp_response_create(data, headers_len);
 
-      // Skip headers on received counter
-      received -= body_start;
-      max_size = response->body_len;
+        if (response == NULL)
+        {
+          // No memory for allocating part of the response
+          free(data);
+          response = NULL;
+          break;
+        }
+        else
+        {
+          int body_start = headers_len + 4; // Skip "\r\n\r\n"
+          // Skip headers on received counter
+          received -= body_start;
+          max_size = response->body_len;
 
-      /*int missing_content_size = response->body_len - received;*/
-      assert(max_size >= received);
+          assert(max_size >= received);
 
-      // Initialize a nuw buffer to hold the complete body
-      char *tmp = (char *)calloc(response->body_len + 1, sizeof(char));
-      // Copy old data
-      memcpy(tmp, data + body_start, received);
-      // Free old buffer
-      free(data);
-      // Point old buffer to the new.
-      data = tmp;
+          // Initialize a nuw buffer to hold the complete body
+          char *tmp = (char *)calloc(response->body_len + 1, sizeof(char));
+
+          if (tmp == NULL)
+          {
+            bp_response_destroy(response);
+            free(data);
+            response = NULL;
+            break;
+          }
+          else
+          {
+            // Copy old data
+            memcpy(tmp, data + body_start, received);
+            // Free old buffer
+            free(data);
+            // Point old buffer to the new.
+            data = tmp;
+          }
+        }
+      }
     }
   } while (received < max_size);
 
   close(sockfd);
 
-  response->body_len = received;
-  assert(received == max_size);
+  if (response != NULL)
+  {
+    response->body_len = received;
+    response->body = data;
+  }
 
-  response->body = data;
+  return response;
 }

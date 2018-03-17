@@ -25,89 +25,126 @@ json_object_key(json_value *value, char *key)
   return NULL;
 }
 
-  static void
-extract_json(ChestResponse *response)
+  static json_value *
+extract_json(BpResponse *response)
 {
-  if (response->_response->body == NULL)
-  {
-    response->json = NULL;
-    return;
-  }
+  if (response->body == NULL)
+    return NULL;
 
-  response->json = json_parse(
-      (json_char *)response->_response->body,
-      response->_response->body_len);
+  return json_parse((json_char *)response->body, response->body_len);
 }
 
-// FIXME: Duplicated code
-  extern ChestResponse *
-chest_get(Session *session, char *path)
+  static ChestResponse *
+chest_response_create(Session *session, BpResponse *response)
+{
+  ChestResponse *chest_response =
+    (ChestResponse *)malloc(sizeof(ChestResponse));
+
+  if (response == NULL)
+    return NULL;
+
+  chest_response->_response = response;
+  chest_response->json = extract_json(response);
+  session_extract_header(session, response->headers);
+
+  return chest_response;
+}
+
+  static BpUrl
+chest_url(char *path)
 {
   BpUrl url = {.host = "localhost", .port = 3000, .path = path};
 
+  return url;
+}
+
+  static ChestResponse *
+chest_send_request(Session *session, BpRequest *request)
+{
+  ChestResponse *chest_response = NULL;
+
+  BpResponse *response = bp_send_request(request);
+
+  if (response != NULL)
+  {
+    chest_response = chest_response_create(session, response);
+
+    if (chest_response == NULL)
+      bp_response_destroy(response);
+  }
+
+  return chest_response;
+}
+
+  extern ChestResponse *
+chest_get(Session *session, char *path)
+{
+  BpUrl url = chest_url(path);
+
   char **headers = calloc(3, sizeof(char *));
+  if (headers == NULL)
+    return NULL;
 
   headers[0] = "Accept: application/json";
   headers[1] = session_create_header(session);
 
-  BpRequest *request = bp_request_allocate(url, headers);
+  ChestResponse *chest_response = NULL;
+  BpRequest *request = bp_request_create(url, headers, BP_REQUEST_METHOD_GET);
 
-  ChestResponse *response = (ChestResponse *)malloc(sizeof(ChestResponse));
-  response->_response = bp_response_allocate();
+  if (request != NULL)
+  {
+    chest_response = chest_send_request(session, request);
 
-  bp_send_get(request, response->_response);
-  extract_json(response);
-
-  session_extract_header(session, response->_response->headers);
-
-  bp_request_destroy(request);
+    bp_request_destroy(request);
+  }
 
   if (headers[1] != NULL)
     free(headers[1]);
 
   free(headers);
 
-  return response;
+  return chest_response;
 }
 
   extern ChestResponse *
 chest_post(Session *session, char *path, char *data, int data_len)
 {
-  BpUrl url = {.host = "localhost", .port = 3000, .path = path};
+  BpUrl url = chest_url(path);
 
   char **headers = calloc(4, sizeof(char *));
+  if (headers == NULL)
+    return NULL;
 
   headers[0] = "Accept: application/json";
   headers[1] = "Content-Type: application/json";
   headers[2] = session_create_header(session);
 
-  BpRequest *request = bp_request_allocate(url, headers);
+  ChestResponse *chest_response = NULL;
+  BpRequest *request = bp_request_create(url, headers, BP_REQUEST_METHOD_POST);
 
-  ChestResponse *response = (ChestResponse *)malloc(sizeof(ChestResponse));
-  response->_response = bp_response_allocate();
+  if (request != NULL)
+  {
+    request->body = data;
+    request->body_len = data_len;
 
-  request->body = data;
-  request->body_len = data_len;
+    chest_response = chest_send_request(session, request);
 
-  bp_send_post(request, response->_response);
-  extract_json(response);
-
-  session_extract_header(session, response->_response->headers);
-
-  bp_request_destroy(request);
+    bp_request_destroy(request);
+  }
 
   if (headers[2] != NULL)
     free(headers[2]);
 
   free(headers);
 
-  return response;
+  return chest_response;
 }
 
   extern void
 chest_response_destroy(ChestResponse *response)
 {
-  bp_response_destroy(response->_response);
+  if (response->_response != NULL)
+    bp_response_destroy(response->_response);
 
   if (response->json != NULL)
     json_value_free(response->json);
