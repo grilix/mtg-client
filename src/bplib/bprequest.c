@@ -22,6 +22,9 @@ bp_request_allocate(BpUrl url, char **headers)
 {
   BpRequest *request = (BpRequest *)malloc(sizeof(BpRequest));
 
+  if (request == NULL)
+    return NULL;
+
   request->url = url;
   request->body = NULL;
   request->body_len = 0;
@@ -36,7 +39,7 @@ bp_request_destroy(BpRequest *request)
   free(request);
 }
 
-  static void
+  static int
 write_request(int sockfd, const char *message, int total)
 {
   int sent = 0, bytes;
@@ -44,14 +47,22 @@ write_request(int sockfd, const char *message, int total)
   do {
     bytes = write(sockfd, message + sent, total - sent);
 
-    if (bytes < 0)
-      error("ERROR writing message to socket");
-
-    if (bytes == 0)
+    if (bytes <= 0)
       break;
 
     sent += bytes;
   } while (sent < total);
+
+  return sent;
+}
+
+  static int
+request_error(BpRequest *request, BpRequestError error)
+{
+  request->status = BP_REQUEST_STATUS_FAILED;
+  request->error = error;
+
+  return -1;
 }
 
   static int
@@ -68,9 +79,15 @@ build_request_body(char *body, int max_len,
     "%s";
 
   int message_len;
-
   char *custom_headers = bp_join_str(request->headers, "\r\n", 1);
   char *method_str;
+
+  if (custom_headers == NULL)
+  {
+    request_error(request, BP_REQUEST_ERROR_OUT_OF_MEMORY);
+    return -1;
+  }
+
 
   switch (method)
   {
@@ -96,29 +113,30 @@ build_request_body(char *body, int max_len,
 }
 
   static int
-open_connection(BpUrl url)
+open_connection(BpRequest *request)
 {
   struct hostent *server;
   struct sockaddr_in serv_addr;
 
   int sockfd;
 
+  request->status = BP_REQUEST_STATUS_CONNECTING;
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
-    error("ERROR opening socket");
+    return request_error(request, BP_REQUEST_ERROR_CANT_OPEN_SOCKET);
 
-  server = gethostbyname(url.host);
+  server = gethostbyname(request->url.host);
   if (server == NULL)
-    error("ERROR, no such host");
+    return request_error(request, BP_REQUEST_ERROR_HOST_NOT_FOUND);
 
   memset(&serv_addr, 0, sizeof(serv_addr));
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(url.port);
+  serv_addr.sin_port = htons(request->url.port);
   memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
 
   if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    error("ERROR connecting");
+    return request_error(request, BP_REQUEST_ERROR_CANT_CONNECT);
 
   return sockfd;
 }
@@ -132,10 +150,20 @@ bp_send_request(BpRequest *request, BpRequestMethod method,
   char message[1024];
 
   message_len = build_request_body(message, 1024, request, method);
+  if (message_len < 0)
+    return;
 
-  sockfd = open_connection(request->url);
+  sockfd = open_connection(request);
+  if (sockfd < 0)
+    return;
 
-  write_request(sockfd, message, message_len);
+  request->status = BP_REQUEST_STATUS_SENDING;
+  if (write_request(sockfd, message, message_len) < message_len)
+  {
+    request_error(request, BP_REQUEST_ERROR_CANT_WRITE_REQUEST);
+    return;
+  }
+  request->status = BP_REQUEST_STATUS_READING;
 
   bp_response_read(sockfd, response);
 }

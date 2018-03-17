@@ -25,6 +25,26 @@ json_object_key(json_value *value, char *key)
   return NULL;
 }
 
+  static ChestResponse *
+chest_response_create()
+{
+  ChestResponse *response = (ChestResponse *)malloc(sizeof(ChestResponse));
+  if (response == NULL)
+    return NULL;
+
+  response->_response = bp_response_allocate();
+
+  if (response->_response == NULL)
+  {
+    free(response);
+    return NULL;
+  }
+
+  response->json = NULL;
+
+  return response;
+}
+
   static void
 extract_json(ChestResponse *response)
 {
@@ -46,21 +66,38 @@ chest_get(Session *session, char *path)
   BpUrl url = {.host = "localhost", .port = 3000, .path = path};
 
   char **headers = calloc(3, sizeof(char *));
+  if (headers == NULL)
+    return NULL;
 
   headers[0] = "Accept: application/json";
   headers[1] = session_create_header(session);
 
   BpRequest *request = bp_request_allocate(url, headers);
+  ChestResponse *response = NULL;
 
-  ChestResponse *response = (ChestResponse *)malloc(sizeof(ChestResponse));
-  response->_response = bp_response_allocate();
+  if (request != NULL)
+  {
+    response = chest_response_create();
 
-  bp_send_get(request, response->_response);
-  extract_json(response);
+    if (response != NULL)
+    {
+      bp_send_get(request, response->_response);
 
-  session_extract_header(session, response->_response->headers);
+      if (request->status == BP_REQUEST_STATUS_SUCCESS)
+      {
+        extract_json(response);
 
-  bp_request_destroy(request);
+        session_extract_header(session, response->_response->headers);
+      }
+      else
+      {
+        chest_response_destroy(response);
+        response = NULL;
+      }
+    }
+
+    bp_request_destroy(request);
+  }
 
   if (headers[1] != NULL)
     free(headers[1]);
@@ -107,7 +144,8 @@ chest_post(Session *session, char *path, char *data, int data_len)
   extern void
 chest_response_destroy(ChestResponse *response)
 {
-  bp_response_destroy(response->_response);
+  if (response->_response != NULL)
+    bp_response_destroy(response->_response);
 
   if (response->json != NULL)
     json_value_free(response->json);

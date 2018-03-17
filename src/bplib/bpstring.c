@@ -27,8 +27,13 @@ bp_split_str(const char* str, const char *delim, int max)
   char *tmp;
 
   pieces = bp_count_str(str, delim, max - 1) + 1;
+  if (pieces == 0)
+    return NULL;
 
   items = (char **)calloc(pieces + 1, sizeof(char *));
+
+  if (items == NULL)
+    return NULL;
 
   i = 0, delim_len = strlen(delim);
 
@@ -36,7 +41,21 @@ bp_split_str(const char* str, const char *delim, int max)
   {
     tmp = strstr(str, delim) + delim_len;
 
-    items[i++] = strndup(str, tmp - str - delim_len);
+    items[i] = strndup(str, tmp - str - delim_len);
+    // If no more memory..
+    if (items[i] == NULL)
+    {
+      // Free whatever we allocated
+      pieces = i  - 1;
+
+      for (i = pieces; i >= 0; i--)
+        free(items[i]);
+
+      free(items);
+      return NULL;
+    }
+
+    i++;
     str = tmp;
   }
   items[i] = strdup(str);
@@ -79,6 +98,8 @@ bp_join_str(char **strings, const char *glue, int glue_end)
     max_len -= glue_len;
 
   char *buffer = (char *)calloc(1, max_len + 1);
+  if (buffer == NULL)
+    return NULL;
 
   char **it = strings;
 
