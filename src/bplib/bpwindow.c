@@ -1,6 +1,23 @@
+#include <string.h>
 #include <stdlib.h>
 #include <ncurses.h>
 #include "bpwindow.h"
+
+  extern void
+bp_window_show_message(BpWindow *window, char *text)
+{
+  int sizex = strlen(text) + 8,
+      sizey = 5,
+      x = ((window->sizex - sizex) / 2) + window->x,
+      y = ((window->sizey - sizey) / 2) + window->y;
+
+  BpWindow *message_window = bp_window_create_box(sizex, sizey, x, y);
+
+  mvwprintw(message_window->_window, 2, 4, "%s", text);
+
+  bp_window_getch(message_window);
+  bp_window_destroy_clear(message_window);
+}
 
   extern int
 bp_window_getch(BpWindow *window)

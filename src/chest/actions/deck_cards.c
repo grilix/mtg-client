@@ -71,32 +71,6 @@ show_collection(BpMenu *menu, json_value *value)
   free(items);
 }
 
-
-  static void
-process_json(BpMenu *menu, ChestResponse *response)
-{
-  json_value *root = response->json;
-  json_value *tmp;
-
-  tmp = json_object_key(root, "error");
-
-  if (tmp)
-  {
-    bp_show_message(tmp->u.string.ptr, 10, 10);
-    return;
-  }
-
-  tmp = json_object_key(root, "cards");
-
-  if (!tmp)
-  {
-    bp_show_message("Unknown response structure for collection.", 10, 10);
-    return;
-  }
-
-  show_collection(menu, tmp);
-}
-
   extern void
 deck_cards_menu(Session *session, int deck_id, int x, int y)
 {
@@ -104,10 +78,17 @@ deck_cards_menu(Session *session, int deck_id, int x, int y)
 
   ChestResponse *response = chest_get_deck_cards(session, deck_id);
 
-  if (response->json == NULL)
-    bp_show_message("Can't process the response.", x, x);
+  if (response == NULL)
+  {
+    bp_window_show_message(menu->_window, "Can't connect to the server");
+    bp_menu_destroy_clear(menu);
+    return;
+  }
+
+  if (response->error != NULL)
+    bp_window_show_message(menu->_window, response->error);
   else
-    process_json(menu, response);
+    show_collection(menu, response->json_root);
 
   bp_menu_destroy_clear(menu);
   chest_response_destroy(response);

@@ -7,7 +7,7 @@
   extern ChestResponse *
 chest_get_decks(Session *session)
 {
-  return chest_get(session, "/api/v1/decks");
+  return chest_get(session, "/api/v1/decks", "decks");
 }
 
   extern ChestResponse *
@@ -22,7 +22,7 @@ chest_get_deck_cards(Session *session, int deck_id)
   // If this fails, we need to allocate space for bigger ids
   assert(result < max_str_size);
 
-  ChestResponse *response = chest_get(session, path_str);
+  ChestResponse *response = chest_get(session, path_str, "cards");
   free(path_str);
 
   return response;

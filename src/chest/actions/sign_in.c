@@ -29,18 +29,32 @@ sign_in_form(Session *session, int x, int y)
     if (form->status == BP_WINDOW_STATUS_PROCESSING)
     {
       bp_form_sync_input(form);
+      ChestResponse *response = sign_in(session,
+                                        fields[1]->value, fields[3]->value);
 
-      if (sign_in(session, fields[1]->value, fields[3]->value) == 0)
-        form->status = BP_WINDOW_STATUS_COMPLETE;
-      else
+      if (response == NULL)
       {
-        bp_show_message("Login failed.", x + 5, y + 2);
-        bp_form_field_set_value(fields[3], "");
-        bp_form_update_fields(form, fields, 4);
-
+        bp_window_show_message(form->_main_win, "Cant connect to the server");
         form->status = BP_WINDOW_STATUS_LOOPING;
       }
+      else
+      {
+        if (response->error != NULL)
+        {
+          bp_window_show_message(form->_main_win, response->error);
+
+          bp_form_field_set_value(fields[3], "");
+          bp_form_update_fields(form, fields, 4);
+
+          form->status = BP_WINDOW_STATUS_LOOPING;
+        }
+        else
+          form->status = BP_WINDOW_STATUS_COMPLETE;
+        chest_response_destroy(response);
+      }
     }
+
+    bp_window_refresh(form->_main_win);
   } while (form->status == BP_WINDOW_STATUS_LOOPING);
 
   form->_main_win->status = BP_WINDOW_STATUS_COMPLETE;

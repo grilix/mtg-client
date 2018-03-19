@@ -1,6 +1,8 @@
 #ifndef BPLIB_BPMESSAGE
 #define BPLIB_BPMESSAGE
 
+#include "bpwindow.h"
+
   extern void
 bp_show_message(char *text, int x, int y);
 

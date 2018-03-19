@@ -19,30 +19,40 @@ trim_whitespaces(char *str);
   extern void
 bp_form_driver(BpForm *form, int ch)
 {
-  int current;
+  int current = field_index(current_field(form->_form));
 
   switch (ch) {
     case 10:
-      current = field_index(current_field(form->_form));
-
       form_driver(form->_form, REQ_NEXT_FIELD);
-      form_driver(form->_form, REQ_END_LINE);
 
       if (field_index(current_field(form->_form)) < current)
       {
+        form_driver(form->_form, REQ_PREV_FIELD);
         bp_form_sync_input(form);
         form->status = BP_WINDOW_STATUS_PROCESSING;
       }
+      else
+        form_driver(form->_form, REQ_END_LINE);
+
       break;
 
     case KEY_DOWN:
       form_driver(form->_form, REQ_NEXT_FIELD);
+
+      if (field_index(current_field(form->_form)) < current)
+        form_driver(form->_form, REQ_PREV_FIELD);
       form_driver(form->_form, REQ_END_LINE);
+
       break;
 
     case KEY_UP:
       form_driver(form->_form, REQ_PREV_FIELD);
-      form_driver(form->_form, REQ_END_LINE);
+
+      if (field_index(current_field(form->_form)) > current)
+        form_driver(form->_form, REQ_NEXT_FIELD);
+      else
+        form_driver(form->_form, REQ_END_LINE);
+
       break;
 
     case KEY_LEFT:
@@ -56,6 +66,8 @@ bp_form_driver(BpForm *form, int ch)
       // Delete the char before cursor
     case KEY_BACKSPACE:
     case 127:
+      // TODO: Don't move to previous field when no more
+      // characters to delete.
       form_driver(form->_form, REQ_DEL_PREV);
       break;
 

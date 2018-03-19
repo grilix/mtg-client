@@ -38,9 +38,9 @@ extract_json(BpResponse *response)
 chest_response_create(Session *session, BpResponse *response)
 {
   ChestResponse *chest_response =
-    (ChestResponse *)malloc(sizeof(ChestResponse));
+    (ChestResponse *)calloc(1, sizeof(ChestResponse));
 
-  if (response == NULL)
+  if (chest_response == NULL)
     return NULL;
 
   chest_response->_response = response;
@@ -50,16 +50,21 @@ chest_response_create(Session *session, BpResponse *response)
   return chest_response;
 }
 
-  static BpUrl
-chest_url(char *path)
+  static BpUrl *
+build_url(char *path)
 {
-  BpUrl url = {.host = "localhost", .port = 3000, .path = path};
+  return bp_url_create("localhost", 3000, path);
+}
 
-  return url;
+  static void
+destroy_url(BpUrl *url)
+{
+  free(url->path);
+  free(url);
 }
 
   static ChestResponse *
-chest_send_request(Session *session, BpRequest *request)
+chest_send_request(Session *session, BpRequest *request, char *root_key)
 {
   ChestResponse *chest_response = NULL;
 
@@ -71,19 +76,50 @@ chest_send_request(Session *session, BpRequest *request)
 
     if (chest_response == NULL)
       bp_response_destroy(response);
+    else
+    {
+      if (chest_response->json == NULL)
+      {
+        chest_response->error = strdup("Invalid server response");
+        if (chest_response->error == NULL)
+        {
+          chest_response_destroy(chest_response);
+          return NULL;
+        }
+      }
+      else
+      {
+        json_value *tmp = json_object_key(chest_response->json, "error");
+
+        if (tmp != NULL)
+          chest_response->error = strdup(tmp->u.string.ptr);
+        else
+        {
+          tmp = json_object_key(chest_response->json, root_key);
+
+          if (tmp != NULL)
+            chest_response->json_root = tmp;
+          else
+            chest_response->error = strdup("Unexpected server response");
+        }
+      }
+    }
   }
 
   return chest_response;
 }
 
   extern ChestResponse *
-chest_get(Session *session, char *path)
+chest_get(Session *session, char *path, char *root_key)
 {
-  BpUrl url = chest_url(path);
+  BpUrl *url = build_url(path);
 
   char **headers = calloc(3, sizeof(char *));
   if (headers == NULL)
+  {
+    destroy_url(url);
     return NULL;
+  }
 
   headers[0] = "Accept: application/json";
   headers[1] = session_create_header(session);
@@ -93,7 +129,7 @@ chest_get(Session *session, char *path)
 
   if (request != NULL)
   {
-    chest_response = chest_send_request(session, request);
+    chest_response = chest_send_request(session, request, root_key);
 
     bp_request_destroy(request);
   }
@@ -101,19 +137,24 @@ chest_get(Session *session, char *path)
   if (headers[1] != NULL)
     free(headers[1]);
 
+  bp_url_destroy(url);
   free(headers);
 
   return chest_response;
 }
 
   extern ChestResponse *
-chest_post(Session *session, char *path, char *data, int data_len)
+chest_post(Session *session, char *path, char *data, int data_len,
+           char *root_key)
 {
-  BpUrl url = chest_url(path);
+  BpUrl *url = build_url(path);
 
   char **headers = calloc(4, sizeof(char *));
   if (headers == NULL)
+  {
+    bp_url_destroy(url);
     return NULL;
+  }
 
   headers[0] = "Accept: application/json";
   headers[1] = "Content-Type: application/json";
@@ -127,7 +168,7 @@ chest_post(Session *session, char *path, char *data, int data_len)
     request->body = data;
     request->body_len = data_len;
 
-    chest_response = chest_send_request(session, request);
+    chest_response = chest_send_request(session, request, root_key);
 
     bp_request_destroy(request);
   }
@@ -135,6 +176,7 @@ chest_post(Session *session, char *path, char *data, int data_len)
   if (headers[2] != NULL)
     free(headers[2]);
 
+  bp_url_destroy(url);
   free(headers);
 
   return chest_response;
@@ -148,6 +190,9 @@ chest_response_destroy(ChestResponse *response)
 
   if (response->json != NULL)
     json_value_free(response->json);
+
+  if (response->error != NULL)
+    free(response->error);
 
   free(response);
 }

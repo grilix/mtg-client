@@ -44,7 +44,7 @@ typedef enum _BpRequestError BpRequestError;
 
 struct _BpRequest
 {
-  BpUrl url;
+  BpUrl *url;
   char **headers;
   char *body;
   BpRequestMethod method;
@@ -56,11 +56,17 @@ struct _BpRequest
 
 typedef struct _BpRequest BpRequest;
 
+  extern BpUrl *
+bp_url_create(char *host, int port, char *path);
+
+  extern void
+bp_url_destroy(BpUrl *url);
+
   extern BpResponse *
 bp_send_request(BpRequest *request);
 
   extern BpRequest *
-bp_request_create(BpUrl url, char **headers, BpRequestMethod method);
+bp_request_create(BpUrl *url, char **headers, BpRequestMethod method);
 
   extern void
 bp_request_destroy(BpRequest *request);

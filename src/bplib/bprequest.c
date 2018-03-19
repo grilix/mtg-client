@@ -17,16 +17,54 @@ error(const char *msg)
   exit(-2);
 }
 
-  extern BpRequest *
-bp_request_create(BpUrl url, char **headers, BpRequestMethod method)
+  extern BpUrl *
+bp_url_create(char *host, int port, char *path)
 {
-  BpRequest *request = (BpRequest *)malloc(sizeof(BpRequest));
+  BpUrl *url = (BpUrl *) calloc(1, sizeof(BpUrl));
+
+  if (url == NULL)
+    return NULL;
+
+  url->host = strdup(host);
+  if (url->host == NULL)
+  {
+    bp_url_destroy(url);
+    return NULL;
+  }
+
+  url->path = strdup(path);
+  if (url->path == NULL)
+  {
+    bp_url_destroy(url);
+    return NULL;
+  }
+
+  url->port = port;
+
+  return url;
+}
+
+  extern void
+bp_url_destroy(BpUrl *url)
+{
+  if (url->host != NULL)
+    free(url->host);
+
+  if (url->path != NULL)
+    free(url->path);
+
+  free(url);
+}
+
+  extern BpRequest *
+bp_request_create(BpUrl *url, char **headers, BpRequestMethod method)
+{
+  BpRequest *request = (BpRequest *)calloc(1, sizeof(BpRequest));
 
   if (request == NULL)
     return NULL;
 
   request->url = url;
-  request->body = NULL;
   request->body_len = 0;
   request->method = method;
   request->headers = headers;
@@ -104,7 +142,7 @@ build_request_body(char *body, int max_len, BpRequest *request)
 
   message_len = snprintf(
       body, max_len, message_fmt,
-      method_str, request->url.path, request->url.host, custom_headers,
+      method_str, request->url->path, request->url->host, custom_headers,
       request->body_len,
       (request->body == NULL) ? "" : request->body);
 
@@ -125,14 +163,14 @@ open_connection(BpRequest *request)
   if (sockfd < 0)
     return request_error(request, BP_REQUEST_ERROR_CANT_OPEN_SOCKET);
 
-  server = gethostbyname(request->url.host);
+  server = gethostbyname(request->url->host);
   if (server == NULL)
     return request_error(request, BP_REQUEST_ERROR_HOST_NOT_FOUND);
 
   memset(&serv_addr, 0, sizeof(serv_addr));
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(request->url.port);
+  serv_addr.sin_port = htons(request->url->port);
   memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
 
   if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)

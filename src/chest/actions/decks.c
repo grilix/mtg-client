@@ -19,7 +19,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 
   if (items_count == 0)
   {
-    bp_show_message("No decks found", 20, 22);
+    bp_window_show_message(menu->_window, "No decks found");
     return;
   }
 
@@ -49,7 +49,8 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
     {
       if (menu->selected != NULL)
       {
-        deck_cards_menu(session, menu->selected->value, 15, 15);
+        deck_cards_menu(session, menu->selected->value,
+                        menu->_window->x + 2, menu->_window->y + 2);
         bp_window_refresh(menu->_window);
       }
 
@@ -63,32 +64,6 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
   free(items);
 }
 
-
-  static void
-process_json(Session *session, BpMenu *menu, ChestResponse *response)
-{
-  json_value *root = response->json;
-  json_value *tmp;
-
-  tmp = json_object_key(root, "error");
-
-  if (tmp)
-  {
-    bp_show_message(tmp->u.string.ptr, 10, 10);
-    return;
-  }
-
-  tmp = json_object_key(root, "decks");
-
-  if (!tmp)
-  {
-    bp_show_message("Unknown response structure for decks.", 10, 10);
-    return;
-  }
-
-  show_decks(session, menu, tmp);
-}
-
   extern void
 decks_menu(Session *session, int x, int y)
 {
@@ -96,10 +71,17 @@ decks_menu(Session *session, int x, int y)
 
   ChestResponse *response = chest_get_decks(session);
 
-  if (response->json == NULL)
-    bp_show_message("Can't process the response.", x, y);
+  if (response == NULL)
+  {
+    bp_window_show_message(menu->_window, "Can't connect to the server");
+    bp_menu_destroy_clear(menu);
+    return;
+  }
+
+  if (response->error != NULL)
+    bp_window_show_message(menu->_window, response->error);
   else
-    process_json(session, menu, response);
+    show_decks(session, menu, response->json_root);
 
   bp_menu_destroy_clear(menu);
   chest_response_destroy(response);

@@ -67,9 +67,6 @@ session_create_header(Session *session)
   memcpy(header, auth, auth_len);
   memcpy(header + auth_len, session->token, token_len);
 
-  /*strncat(header, auth, strlen(auth));*/
-  /*strncat(header, session->token, strlen(session->token));*/
-
   return header;
 }
 
@@ -86,15 +83,14 @@ session_load(Session *session, const char *filename)
                 4 + // minimum body: "{}" = "e30K"
                 1;  // signature could be anything
 
-  file = fopen(".token", "r");
+  if ((file = fopen(".token", "r")) == NULL)
+    return;
 
-  if (file)
-  {
-    fgets(token, 255, file);
+  if (fgets(token, 255, file) == NULL)
+    return;
 
-    if (strlen(token) > min_len)
-      session_set_token(session, token);
-  }
+  if (strlen(token) > min_len)
+    session_set_token(session, token);
 }
 
   extern void
@@ -102,15 +98,13 @@ session_save(Session *session, const char *filename)
 {
   FILE *file;
 
-  file = fopen(".token", "w");
+  if ((file = fopen(".token", "w")) == NULL)
+    return;
 
-  if (file)
-  {
-    if (session->token)
-      fputs(session->token, file);
-    else
-      fputs("", file);
-  }
+  if (session->token != NULL)
+    fputs(session->token, file);
+  else
+    fputs("", file);
 }
 
   extern void

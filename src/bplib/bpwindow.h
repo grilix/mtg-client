@@ -41,6 +41,9 @@ struct _BpWindow
 
 typedef struct _BpWindow BpWindow;
 
+  extern void
+bp_window_show_message(BpWindow *window, char *text);
+
   extern int
 bp_window_getch(BpWindow *window);
 
