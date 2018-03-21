@@ -43,4 +43,11 @@ chest_get_decks(Session *session);
   extern ChestResponse *
 chest_get_deck_cards(Session *session, int deck_id);
 
+  extern ChestResponse *
+chest_get_deck_card_alternatives(Session *session, int deck_id, int card_id);
+
+  extern ChestResponse *
+chest_get_deck_card_details(Session *session, int deck_id,
+                            int user_printing_id);
+
 #endif

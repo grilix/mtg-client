@@ -28,12 +28,12 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 
   for (i = 0; i < items_count; i++)
   {
-    tmp = json_object_key(value->u.array.values[i], "name");
+    tmp = json_object_key(value->u.array.values[i], "deck_name");
 
     items[i] = (BpMenuItem *)malloc(sizeof(BpMenuItem));
     items[i]->title = tmp->u.string.ptr;
 
-    tmp = json_object_key(value->u.array.values[i], "id");
+    tmp = json_object_key(value->u.array.values[i], "deck_id");
     items[i]->value = tmp->u.integer;
   }
 
