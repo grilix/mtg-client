@@ -1,11 +1,10 @@
-#include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
-#include <ncurses.h>
 #include <form.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "bpwindow.h"
 #include "bpform.h"
+#include "bpwindow.h"
 
 /*
  * This file contains code copied from/based on:
@@ -13,78 +12,79 @@
  *     https://gist.github.com/alan-mushi/c8a6f34d1df18574f643
  */
 
-  static char*
+static char *
 trim_whitespaces(char *str);
 
-  extern void
+extern void
 bp_form_driver(BpForm *form, int ch)
 {
   int current = field_index(current_field(form->_form));
 
-  switch (ch) {
-    case 10:
-      form_driver(form->_form, REQ_NEXT_FIELD);
+  switch (ch)
+  {
+  case 10:
+    form_driver(form->_form, REQ_NEXT_FIELD);
 
-      if (field_index(current_field(form->_form)) < current)
-      {
-        form_driver(form->_form, REQ_PREV_FIELD);
-        bp_form_sync_input(form);
-        form->status = BP_WINDOW_STATUS_PROCESSING;
-      }
-      else
-        form_driver(form->_form, REQ_END_LINE);
-
-      break;
-
-    case KEY_DOWN:
-      form_driver(form->_form, REQ_NEXT_FIELD);
-
-      if (field_index(current_field(form->_form)) < current)
-        form_driver(form->_form, REQ_PREV_FIELD);
+    if (field_index(current_field(form->_form)) < current)
+    {
+      form_driver(form->_form, REQ_PREV_FIELD);
+      bp_form_sync_input(form);
+      form->status = BP_WINDOW_STATUS_PROCESSING;
+    }
+    else
       form_driver(form->_form, REQ_END_LINE);
 
-      break;
+    break;
 
-    case KEY_UP:
+  case KEY_DOWN:
+    form_driver(form->_form, REQ_NEXT_FIELD);
+
+    if (field_index(current_field(form->_form)) < current)
       form_driver(form->_form, REQ_PREV_FIELD);
+    form_driver(form->_form, REQ_END_LINE);
 
-      if (field_index(current_field(form->_form)) > current)
-        form_driver(form->_form, REQ_NEXT_FIELD);
-      else
-        form_driver(form->_form, REQ_END_LINE);
+    break;
 
-      break;
+  case KEY_UP:
+    form_driver(form->_form, REQ_PREV_FIELD);
 
-    case KEY_LEFT:
-      form_driver(form->_form, REQ_PREV_CHAR);
-      break;
+    if (field_index(current_field(form->_form)) > current)
+      form_driver(form->_form, REQ_NEXT_FIELD);
+    else
+      form_driver(form->_form, REQ_END_LINE);
 
-    case KEY_RIGHT:
-      form_driver(form->_form, REQ_NEXT_CHAR);
-      break;
+    break;
 
-      // Delete the char before cursor
-    case KEY_BACKSPACE:
-    case 127:
-      // TODO: Don't move to previous field when no more
-      // characters to delete.
-      form_driver(form->_form, REQ_DEL_PREV);
-      break;
+  case KEY_LEFT:
+    form_driver(form->_form, REQ_PREV_CHAR);
+    break;
 
-      // Delete the char under the cursor
-    case KEY_DC:
-      form_driver(form->_form, REQ_DEL_CHAR);
-      break;
+  case KEY_RIGHT:
+    form_driver(form->_form, REQ_NEXT_CHAR);
+    break;
 
-    default:
-      form_driver(form->_form, ch);
-      break;
+    // Delete the char before cursor
+  case KEY_BACKSPACE:
+  case 127:
+    // TODO: Don't move to previous field when no more
+    // characters to delete.
+    form_driver(form->_form, REQ_DEL_PREV);
+    break;
+
+    // Delete the char under the cursor
+  case KEY_DC:
+    form_driver(form->_form, REQ_DEL_CHAR);
+    break;
+
+  default:
+    form_driver(form->_form, ch);
+    break;
   }
 
   wrefresh(form->_body_win);
 }
 
-  extern void
+extern void
 bp_form_loop(BpForm *form)
 {
   int ch;
@@ -94,7 +94,8 @@ bp_form_loop(BpForm *form)
 
   form->status = form->_main_win->status = BP_WINDOW_STATUS_LOOPING;
 
-  do {
+  do
+  {
     ch = bp_window_getch(form->_main_win);
 
     if (!bp_window_driver(form->_main_win, ch))
@@ -107,10 +108,9 @@ bp_form_loop(BpForm *form)
         form->status = BP_WINDOW_STATUS_COMPLETE;
     }
 
-
-  } while(form->status == BP_WINDOW_STATUS_LOOPING);
+  } while (form->status == BP_WINDOW_STATUS_LOOPING);
 }
-  extern void
+extern void
 bp_form_field_set_value(BpFormField *field, char *value)
 {
   if (field->value != NULL)
@@ -119,10 +119,8 @@ bp_form_field_set_value(BpFormField *field, char *value)
   field->value = strdup(value);
 }
 
-  static void
-bp_form_create_fields(BpForm *form,
-                      BpFormField **form_fields,
-                      int field_count)
+static void
+bp_form_create_fields(BpForm *form, BpFormField **form_fields, int field_count)
 {
   FIELD **field;
   BpFormField **form_field;
@@ -154,7 +152,7 @@ bp_form_create_fields(BpForm *form,
   }
 }
 
-  static void
+static void
 bp_form_destroy_fields(BpForm *form)
 {
   FIELD **field = form->_fields;
@@ -168,26 +166,24 @@ bp_form_destroy_fields(BpForm *form)
   free(form->_fields);
 }
 
-  static void
+static void
 display_form(BpForm *form)
 {
   form->_form = new_form(form->_fields);
 
   set_form_win(form->_form, form->_body_win);
   set_form_sub(form->_form,
-               derwin(form->_body_win,
-                      form->sizey - 6, form->sizex - 4, 1, 1));
+               derwin(form->_body_win, form->sizey - 6, form->sizex - 4, 1, 1));
 
   post_form(form->_form);
 
-  //refresh();
   wrefresh(form->_main_win->_window);
   wrefresh(form->_body_win);
 }
 
-  extern BpForm *
+extern BpForm *
 bp_form_create(char *title, BpFormField **form_fields, int field_count,
-              int sizex, int sizey, int x, int y)
+               int sizex, int sizey, int x, int y)
 {
   BpForm *form = (BpForm *)malloc(sizeof(BpForm));
 
@@ -197,8 +193,8 @@ bp_form_create(char *title, BpFormField **form_fields, int field_count,
   form->y = y;
 
   form->_main_win = bp_window_create_frame(title, sizex, sizey, x, y);
-  form->_body_win = derwin(form->_main_win->_window,
-                           sizey - 4, sizex - 2, 3, 1);
+  form->_body_win =
+      derwin(form->_main_win->_window, sizey - 4, sizex - 2, 3, 1);
 
   bp_form_create_fields(form, form_fields, field_count);
 
@@ -207,22 +203,22 @@ bp_form_create(char *title, BpFormField **form_fields, int field_count,
   return form;
 }
 
-  extern void
+extern void
 bp_form_sync_input(BpForm *form)
 {
   FIELD **field = form->_fields;
   BpFormField **form_field = form->_form_fields;
 
-  while(*field)
+  while (*field)
   {
     bp_form_field_set_value(*form_field,
-      trim_whitespaces(field_buffer(*field, 0)));
+                            trim_whitespaces(field_buffer(*field, 0)));
     form_field++;
     field++;
   }
 }
 
-  extern void
+extern void
 bp_form_update_fields(BpForm *form, BpFormField **fields, int field_count)
 {
   unpost_form(form->_form);
@@ -234,7 +230,7 @@ bp_form_update_fields(BpForm *form, BpFormField **fields, int field_count)
   display_form(form);
 }
 
-  extern void
+extern void
 bp_form_destroy(BpForm *form)
 {
   unpost_form(form->_form);
@@ -247,7 +243,7 @@ bp_form_destroy(BpForm *form)
   free(form);
 }
 
-  extern BpFormField *
+extern BpFormField *
 bp_form_field_create(enum BpFormFieldType type, char *value)
 {
   BpFormField *field = (BpFormField *)malloc(sizeof(BpFormField));
@@ -259,7 +255,7 @@ bp_form_field_create(enum BpFormFieldType type, char *value)
   return field;
 }
 
-  extern void
+extern void
 bp_form_field_destroy(BpFormField *field)
 {
   free(field->value);
@@ -270,7 +266,7 @@ bp_form_field_destroy(BpFormField *field)
  * This is useful because ncurses fill fields blanks with spaces.
  *
  */
-  static char*
+static char *
 trim_whitespaces(char *str)
 {
   char *end;

@@ -1,4 +1,3 @@
-#include <unistd.h>
 #include <stdlib.h>
 #include <ncurses.h>
 #include <menu.h>
@@ -83,6 +82,24 @@ bp_menu_destroy_items(BpMenu *menu)
     free_item(*(item++));
 
   free(menu->_items);
+}
+
+  extern BpMenuItem *
+bp_menu_item_create(char *title, int value)
+{
+  BpMenuItem *item = (BpMenuItem *)malloc(sizeof(BpMenuItem));
+
+  item->value = value;
+  item->title = strdup(title);
+
+  return item;
+}
+
+  extern void
+bp_menu_item_destroy(BpMenuItem *item)
+{
+  free(item->title);
+  free(item);
 }
 
   extern void

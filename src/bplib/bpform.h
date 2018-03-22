@@ -1,6 +1,6 @@
-#ifndef BPLIB_BPFORM_H
-#define BPLIB_BPFORM_H
+#pragma once
 
+#include <ncurses.h>
 #include "bpwindow.h"
 #include "form.h"
 
@@ -108,5 +108,3 @@ bp_form_field_create(enum BpFormFieldType type, char *value);
 
   extern void
 bp_form_field_destroy(BpFormField *field);
-
-#endif

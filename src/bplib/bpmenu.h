@@ -36,6 +36,12 @@ bp_menu_loop_handler(BpMenu *menu);
   extern void
 bp_menu_loop(BpMenu *menu);
 
+  extern BpMenuItem *
+bp_menu_item_create(char *title, int value);
+
+  extern void
+bp_menu_item_destroy(BpMenuItem *item);
+
   extern BpMenu *
 bp_menu_create(char *title, BpMenuItem **items, int items_count,
               int sizex, int sizey, int x, int y);

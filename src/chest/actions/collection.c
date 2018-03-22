@@ -34,7 +34,7 @@ show_collection(BpMenu *menu, json_value *value)
     return;
   }
 
-  BpMenuItem **items = build_card_list(value, value->u.array.length);
+  BpMenuItem **items = build_card_list(value);
 
   bp_menu_set_items(menu, items, items_count);
 
@@ -56,7 +56,7 @@ show_collection(BpMenu *menu, json_value *value)
  } while (menu->status == BP_WINDOW_STATUS_LOOPING);
 
   for (i = 0; i < items_count; i++)
-    free(items[i]);
+    bp_menu_item_destroy(items[i]);
 
   free(items);
 }

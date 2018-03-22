@@ -1,5 +1,7 @@
-#ifndef BPLIB_BPWINDOW_H
-#define BPLIB_BPWINDOW_H
+#pragma once
+
+#include <ncurses.h>
+#include <stdbool.h>
 
 /*
  * Widgets are also user interactions by themselves,
@@ -83,5 +85,3 @@ bp_window_destroy(BpWindow *window);
  */
   extern void
 bp_window_destroy_clear(BpWindow *window);
-
-#endif

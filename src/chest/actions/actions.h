@@ -1,12 +1,14 @@
-#ifndef CHEST_ACTIONS_ACTIONS_H
-#define CHEST_ACTIONS_ACTIONS_H
+#pragma once
 
 #include "../session.h"
 #include "../../json/json.h"
 #include "../../bplib/bpmenu.h"
 
   extern BpMenuItem **
-build_card_list(json_value *list, int list_items);
+build_card_list(json_value *list);
+
+  extern BpMenuItem **
+build_deck_list(json_value *list);
 
   extern void
 collection_menu(Session *session, int x, int y);
@@ -19,5 +21,3 @@ decks_menu(Session *session, int x, int y);
 
   extern void
 sign_in_form(Session *session, int x, int y);
-
-#endif

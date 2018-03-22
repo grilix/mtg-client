@@ -1,25 +1,25 @@
+#include <ncurses.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <ncurses.h>
+
 #include "bplib/bpform.h"
 #include "bplib/bpmenu.h"
 #include "bplib/bpmessage.h"
-#include "chest/session.h"
+#include "bplib/bpwindow.h"
 #include "chest/actions/actions.h"
+#include "chest/session.h"
 
-static BpMenuItem
-  menu_sign_in =    {.value = 0, .title = "Sign In"},
-  menu_collection = {.value = 1, .title = "Collection"},
-  menu_exit =       {.value = 2, .title = "Exit"},
-  menu_sign_out =   {.value = 3, .title = "Sign Out"},
-  menu_decks =      {.value = 4, .title = "Decks"};
+static BpMenuItem menu_sign_in = {.value = 0, .title = "Sign In"},
+                  menu_collection = {.value = 1, .title = "Collection"},
+                  menu_exit = {.value = 2, .title = "Exit"},
+                  menu_sign_out = {.value = 3, .title = "Sign Out"},
+                  menu_decks = {.value = 4, .title = "Decks"};
 
-  static void
+static void
 main_menu_driver(Session *session, BpMenu *menu)
 {
   BpMenuItem *selected = NULL;
-  int x = menu->_window->x + 2,
-      y = menu->_window->y + 2;
+  int x = menu->_window->x + 2, y = menu->_window->y + 2;
 
   bp_menu_loop(menu);
 
@@ -46,7 +46,7 @@ main_menu_driver(Session *session, BpMenu *menu)
   bp_window_refresh(menu->_window);
 }
 
-  static int
+static int
 main_menu_items(Session *session, BpMenuItem **items)
 {
   int signed_in = session->token != NULL;
@@ -71,18 +71,18 @@ main_menu_items(Session *session, BpMenuItem **items)
   return items_count;
 }
 
-  static void
+static void
 main_menu(Session *session, int x, int y)
 {
-
   int items_count = 4;
 
   BpMenu *menu = bp_menu_create("Options", NULL, 0, 20, 10, x, y);
 
   BpMenuItem **choices =
-    (BpMenuItem **)calloc(items_count, sizeof(BpMenuItem *));
+      (BpMenuItem **)calloc(items_count, sizeof(BpMenuItem *));
 
-  do {
+  do
+  {
     items_count = main_menu_items(session, choices);
 
     bp_menu_set_items(menu, choices, items_count);
@@ -95,14 +95,14 @@ main_menu(Session *session, int x, int y)
   bp_menu_destroy_clear(menu);
 }
 
-  static void
+static void
 finish(int sig)
 {
   endwin();
   exit(0);
 }
 
-  extern int
+extern int
 main()
 {
   signal(SIGINT, finish);

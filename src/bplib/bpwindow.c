@@ -1,6 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
-#include <ncurses.h>
+
 #include "bpwindow.h"
 
   extern void

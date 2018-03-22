@@ -15,7 +15,6 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
 {
   int i;
   int items_count = value->u.array.length;
-  json_value *tmp;
 
   if (items_count == 0)
   {
@@ -23,19 +22,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
     return;
   }
 
-  BpMenuItem **items =
-    (BpMenuItem **)calloc(items_count, sizeof(BpMenuItem *));
-
-  for (i = 0; i < items_count; i++)
-  {
-    tmp = json_object_key(value->u.array.values[i], "deck_name");
-
-    items[i] = (BpMenuItem *)malloc(sizeof(BpMenuItem));
-    items[i]->title = tmp->u.string.ptr;
-
-    tmp = json_object_key(value->u.array.values[i], "deck_id");
-    items[i]->value = tmp->u.integer;
-  }
+  BpMenuItem **items = build_deck_list(value);
 
   bp_menu_set_items(menu, items, items_count);
 
@@ -59,7 +46,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
  } while (menu->status == BP_WINDOW_STATUS_LOOPING);
 
   for (i = 0; i < items_count; i++)
-    free(items[i]);
+    bp_menu_item_destroy(items[i]);
 
   free(items);
 }
