@@ -22,7 +22,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
     return;
   }
 
-  BpMenuItem **items = build_deck_list(value);
+  BpMenuItem **items = build_deck_list(value, menu->_window->sizex - 2);
 
   bp_menu_set_items(menu, items, items_count);
 
@@ -45,10 +45,7 @@ show_decks(Session *session, BpMenu *menu, json_value *value)
     }
  } while (menu->status == BP_WINDOW_STATUS_LOOPING);
 
-  for (i = 0; i < items_count; i++)
-    bp_menu_item_destroy(items[i]);
-
-  free(items);
+  destroy_deck_list(items);
 }
 
   extern void

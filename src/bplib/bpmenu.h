@@ -27,29 +27,29 @@ struct _BpMenu
 
 typedef struct _BpMenu BpMenu;
 
-  extern void
+extern void
 bp_menu_loop_start(BpMenu *menu);
 
-  extern void
+extern void
 bp_menu_loop_handler(BpMenu *menu);
 
-  extern void
+extern void
 bp_menu_loop(BpMenu *menu);
 
-  extern BpMenuItem *
-bp_menu_item_create(char *title, int value);
+extern BpMenuItem **
+bp_menu_item_create_list(int count);
 
-  extern void
-bp_menu_item_destroy(BpMenuItem *item);
+extern void
+bp_menu_item_destroy_list(BpMenuItem **items);
 
-  extern BpMenu *
-bp_menu_create(char *title, BpMenuItem **items, int items_count,
-              int sizex, int sizey, int x, int y);
+extern BpMenu *
+bp_menu_create(char *title, BpMenuItem **items, int items_count, int sizex,
+               int sizey, int x, int y);
 
-  extern void
+extern void
 bp_menu_set_items(BpMenu *menu, BpMenuItem **items, int items_count);
 
-  extern void
+extern void
 bp_menu_destroy_clear(BpMenu *menu);
 
 #endif
